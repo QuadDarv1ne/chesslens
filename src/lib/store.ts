@@ -50,7 +50,7 @@ interface AnalysisStore {
   flip: () => void;
   addMove: (from: string, to: string, promotion?: string) => boolean;
   setDepth: (d: number) => void;
-  startAnalysis: (depth?: number) => void;
+  startAnalysis: (depth?: number, fromPly?: number) => void;
   stopAnalysis: () => void;
   deepenCurrent: () => void;
   clearError: () => void;

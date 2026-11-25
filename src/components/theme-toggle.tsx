@@ -1,7 +1,7 @@
 'use client';
 
 // Переключатель темы оформления в шапке: системная + 5 фиксированных тем.
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useTheme } from 'next-themes';
 import { Check, Monitor, Moon, Palette, Sun, Waves, Leaf, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,9 +25,12 @@ const ICONS = {
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
-  // Состояние для сider-рендера: до монтирования не показываем ничего, чтобы не мигало.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // До монтирования не показываем кнопку, чтобы не мигало (SSR-гидратация).
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   if (!mounted) {
     return (

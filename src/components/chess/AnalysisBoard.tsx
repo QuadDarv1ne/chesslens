@@ -4,6 +4,7 @@
 import { useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
+import type { PieceDropHandlerArgs, PieceHandlerArgs } from 'react-chessboard';
 import {
   ChevronFirst,
   ChevronLeft,
@@ -185,7 +186,8 @@ export function AnalysisBoard() {
     return addMove(sourceSquare, targetSquare);
   };
 
-  const handlePieceDrop = ({ piece, sourceSquare, targetSquare }: { piece: { pieceType: string }; sourceSquare: string; targetSquare: string }): boolean => {
+  const handlePieceDrop = ({ piece, sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean => {
+    if (!targetSquare) return false;
     const pieceColor = piece.pieceType[0] === 'w' ? 'w' : 'b';
     let turn: 'w' | 'b' = 'w';
     try {
@@ -266,7 +268,9 @@ export function AnalysisBoard() {
                 lightSquareStyle: { backgroundColor: 'var(--board-light)' },
                 onPieceDrop: handlePieceDrop,
                 onSquareClick: handleSquareClick,
-                onPieceClick: ({ square }) => handleSquareClick({ square }),
+                onPieceClick: ({ square }: PieceHandlerArgs) => {
+                  if (square) handleSquareClick({ square });
+                },
               }}
             />
           </div>

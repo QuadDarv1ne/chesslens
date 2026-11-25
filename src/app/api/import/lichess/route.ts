@@ -71,11 +71,14 @@ export async function GET(req: NextRequest) {
         games.push({
           source: 'lichess',
           id: String(g.id ?? ''),
-          white: g.white?.user?.name ?? tag('White') ?? 'Аноним',
-          black: g.black?.user?.name ?? tag('Black') ?? 'Аноним',
+          white: g.white?.user?.name || tag('White') || 'Аноним',
+          black: g.black?.user?.name || tag('Black') || 'Аноним',
           whiteRating: g.white?.rating ?? (parseInt(tag('WhiteElo'), 10) || null),
           blackRating: g.black?.rating ?? (parseInt(tag('BlackElo'), 10) || null),
-          result: (tag('Result') || result) === '*' ? result : tag('Result') || result,
+          result: (() => {
+            const r = tag('Result');
+            return !r || r === '*' ? result : r;
+          })(),
           speed: SPEED_RU[g.speed] ?? g.speed ?? '',
           date: g.createdAt ? new Date(g.createdAt).toLocaleDateString('ru-RU') : '',
           pgn,
