@@ -1,0 +1,29 @@
+# Blueprint деплоя на Render (https://render.com).
+# Использование: Dashboard -> New -> Blueprint -> выберите репозиторий -> Apply.
+# После этого Render будет автоматически пересобирать сервис при каждом git push.
+
+services:
+  - type: web
+    name: chesslens
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free          # free: сервис засыпает без трафика; для диска под БД нужен план Starter+
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      # SQLite в /data. На плане free каталог временный (сервис не сохраняет
+      # состояние); на Starter+ добавьте диск с mount path /data — см. DEPLOY.md.
+      - key: DATABASE_URL
+        value: file:/data/chesslens.db
+
+# Опционально для платных планов: постоянный диск под SQLite.
+# Раскомментируйте и смените plan на starter (или выше):
+#    disk:
+#      name: chesslens-data
+#      diskSizeGB: 1
+#      mountPath: /data

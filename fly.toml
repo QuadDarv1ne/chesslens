@@ -1,0 +1,51 @@
+# Конфигурация деплоя на Fly.io (https://fly.io).
+# Быстрый старт:
+#   fly auth login
+#   fly launch --no-deploy   # создаст приложение (можно сменить имя и регион)
+#   fly deploy
+# Полная инструкция — в DEPLOY.md.
+
+app = "chesslens"
+primary_region = "ams"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  # SQLite лежит в /data. Для постоянного хранения создайте том
+  # (fly volumes create chesslens_data --size 1 --region ams) и
+  # раскомментируйте секцию [mounts] ниже.
+  DATABASE_URL = "file:/data/chesslens.db"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+  # Платформа проверяет здоровье сервиса этим эндпоинтом
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/api/health"
+
+# Опционально: постоянный том для SQLite (раскомментируйте после
+# `fly volumes create chesslens_data --size 1 --region ams`).
+# [mounts]
+#   source = "chesslens_data"
+#   destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

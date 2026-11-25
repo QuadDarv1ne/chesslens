@@ -1,0 +1,26 @@
+# Исключается из контекста сборки Docker (образ собирается быстрее и меньше)
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.local
+db
+*.log
+dev.log
+server.log
+
+# Локальные/вспомогательные каталоги, не нужные в рантайме
+download
+upload
+skills
+tests
+examples
+mini-services
+.zscripts
+Caddyfile
+
+# Платформенные конфиги не нужны внутри образа
+fly.toml
+railway.json
+render.yaml
