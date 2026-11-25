@@ -3,6 +3,8 @@
   "version": "0.4.0",
   "private": true,
   "description": "ChessLens — анализ шахматных партий: Stockfish 19 в браузере, классификация ходов, график оценки, точность игроков",
+  "author": "Дуплей Максим Игоревич",
+  "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "node": ">=20.9"
   },
