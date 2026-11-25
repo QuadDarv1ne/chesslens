@@ -96,7 +96,6 @@ function Carousel({
   React.useEffect(() => {
     if (!api) return
     // Синхронизируем состояние с внешним API карусели (подписка на события).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     onSelect(api)
     api.on("reInit", onSelect)
     api.on("select", onSelect)
