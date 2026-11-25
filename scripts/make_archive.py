@@ -9,7 +9,7 @@ import os
 import zipfile
 
 ROOT = "/home/z/my-project"
-OUT = os.path.join(ROOT, "download", "chesslens-v0.3.0.zip")
+OUT = os.path.join(ROOT, "download", "chesslens-v0.4.0.zip")
 PREFIX = "chesslens"
 
 EXCLUDE_DIRS = {
