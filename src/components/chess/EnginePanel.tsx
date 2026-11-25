@@ -10,7 +10,7 @@ import { formatEval } from '@/lib/chess/analysis';
 const DEPTHS = [10, 12, 14, 16, 18];
 
 const STATUS_LABEL: Record<string, { text: string; color: string }> = {
-  off: { text: 'Выключен', color: 'bg-zinc-500' },
+  off: { text: 'Выключен', color: 'bg-muted-foreground' },
   loading: { text: 'Загрузка движка…', color: 'bg-amber-400 animate-pulse' },
   ready: { text: 'Stockfish 19 готов', color: 'bg-emerald-500' },
   analyzing: { text: 'Анализирует…', color: 'bg-emerald-400 animate-pulse' },
@@ -38,10 +38,10 @@ export function EnginePanel() {
       : null;
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#12151b] p-4">
+    <div className="rounded-xl border border-border bg-panel p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-zinc-300">Движок</h3>
-        <span className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <h3 className="text-sm font-semibold text-foreground/90">Движок</h3>
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className={`h-2 w-2 rounded-full ${status.color}`} />
           {status.text}
           {analyzing && progressTotal > 1 ? ` ${progressDone}/${progressTotal}` : ''}
@@ -50,23 +50,23 @@ export function EnginePanel() {
 
       {/* Оценка текущей позиции */}
       <div className="mb-3 flex items-baseline gap-3">
-        <span className="font-mono text-2xl font-bold text-zinc-100">{formatEval(currentEval)}</span>
+        <span className="font-mono text-2xl font-bold text-foreground">{formatEval(currentEval)}</span>
         {currentEval ? (
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-muted-foreground">
             глубина {currentEval.depth}
             {currentEval.nodes > 0 ? ` · ${currentEval.nodes.toLocaleString('ru-RU')} узлов` : ''}
             {nps ? ` · ${(nps / 1000).toFixed(0)} тыс. узлов/с` : ''}
           </span>
         ) : (
-          <span className="text-xs text-zinc-500">позиция ещё не оценена</span>
+          <span className="text-xs text-muted-foreground">позиция ещё не оценена</span>
         )}
       </div>
 
       {/* Линия */}
       {currentEval?.pvSan?.length ? (
-        <div className="mb-3 rounded-lg bg-[#0d1015] px-3 py-2">
-          <span className="text-[10px] uppercase tracking-wide text-zinc-600">Лучшая линия</span>
-          <p className="mt-0.5 font-mono text-xs leading-relaxed text-emerald-300">
+        <div className="mb-3 rounded-lg bg-panel-soft px-3 py-2">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Лучшая линия</span>
+          <p className="mt-0.5 font-mono text-xs leading-relaxed text-emerald-700 night:text-emerald-300">
             {currentEval.pvSan.join(' ')}
           </p>
         </div>
@@ -75,10 +75,10 @@ export function EnginePanel() {
       {/* Управление */}
       <div className="flex flex-wrap items-center gap-2">
         <Select value={String(depth)} onValueChange={(v) => setDepth(parseInt(v, 10))}>
-          <SelectTrigger className="h-9 w-[130px] border-zinc-700 bg-[#181d24] text-zinc-300" aria-label="Глубина анализа">
+          <SelectTrigger className="h-9 w-[130px] border-border bg-panel-input text-foreground/90" aria-label="Глубина анализа">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="border-zinc-700 bg-[#181d24] text-zinc-300">
+          <SelectContent className="border-border bg-panel-input text-foreground/90">
             {DEPTHS.map((d) => (
               <SelectItem key={d} value={String(d)}>
                 Глубина {d}
@@ -90,7 +90,7 @@ export function EnginePanel() {
         {analyzing ? (
           <Button
             variant="outline"
-            className="h-9 border-zinc-700 bg-[#181d24] text-zinc-300 hover:bg-[#20262f]"
+            className="h-9 border-border bg-panel-input text-foreground/90 hover:bg-accent"
             onClick={stopAnalysis}
           >
             <Square className="mr-1.5 h-3.5 w-3.5" /> Стоп
@@ -106,7 +106,7 @@ export function EnginePanel() {
 
         <Button
           variant="outline"
-          className="h-9 border-zinc-700 bg-[#181d24] text-zinc-300 hover:bg-[#20262f]"
+          className="h-9 border-border bg-panel-input text-foreground/90 hover:bg-accent"
           disabled={analyzing}
           onClick={deepenCurrent}
           title="Углублённый поиск (глубина 18) для текущей позиции"
@@ -117,7 +117,7 @@ export function EnginePanel() {
 
       {analyzing && progressTotal > 0 ? (
         <div className="mt-3">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#0d1015]">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-panel-soft">
             <div
               className="h-full rounded-full bg-emerald-500 transition-all duration-200"
               style={{ width: `${Math.round((progressDone / progressTotal) * 100)}%` }}
@@ -127,7 +127,7 @@ export function EnginePanel() {
       ) : null}
 
       {!analyzing && engineStatus === 'off' ? (
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-600">
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground/70">
           <Loader2 className="h-3 w-3 animate-spin" /> Движок загрузится при первом анализе (~1.7 МБ WASM).
         </p>
       ) : null}

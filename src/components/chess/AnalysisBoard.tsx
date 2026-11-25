@@ -56,18 +56,18 @@ function PlayerStrip({
           className={`h-4 w-4 shrink-0 rounded-sm border ${color === 'white' ? 'bg-zinc-100 border-zinc-400' : 'bg-zinc-900 border-zinc-600'}`}
           aria-hidden
         />
-        <span className="truncate text-sm font-medium text-zinc-200">
+        <span className="truncate text-sm font-medium text-foreground">
           {name}
-          {rating ? <span className="ml-1 text-zinc-500">({rating})</span> : null}
+          {rating ? <span className="ml-1 text-muted-foreground">({rating})</span> : null}
         </span>
         {accuracy !== null && accuracy !== undefined ? (
-          <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-400">
+          <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-700 night:text-emerald-400">
             Точность {accuracy.toFixed(1)}%
           </span>
         ) : null}
       </div>
       {material > 0 ? (
-        <span className="shrink-0 text-xs font-semibold text-zinc-400">+{material}</span>
+        <span className="shrink-0 text-xs font-semibold text-muted-foreground">+{material}</span>
       ) : null}
     </div>
   );
@@ -221,7 +221,7 @@ export function AnalysisBoard() {
   const evalLabel = formatEval(currentEval);
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#12151b] p-3 sm:p-4">
+    <div className="rounded-xl border border-border bg-panel p-3 sm:p-4">
       {/* Игрок сверху */}
       <PlayerStrip
         color={topColor}
@@ -234,10 +234,13 @@ export function AnalysisBoard() {
       {/* Доска + полоса оценки */}
       <div className="flex items-stretch gap-2">
         {/* Полоса оценки */}
-        <div className="relative w-6 shrink-0 overflow-hidden rounded-md bg-[#22262e] sm:w-7">
+        <div
+          className="relative w-6 shrink-0 overflow-hidden rounded-md sm:w-7"
+          style={{ background: 'var(--eval-black)' }}
+        >
           <div
-            className="absolute inset-x-0 bottom-0 bg-[#e7e6e3] transition-all duration-500"
-            style={{ height: `${whiteWin}%` }}
+            className="absolute inset-x-0 bottom-0 transition-all duration-500"
+            style={{ height: `${whiteWin}%`, background: 'var(--eval-white)' }}
           />
           <div className="absolute inset-x-0 top-1/2 h-px bg-emerald-500/60" />
           <div
@@ -259,8 +262,8 @@ export function AnalysisBoard() {
                 allowDrawingArrows: true,
                 arrows,
                 squareStyles: squareStyles,
-                darkSquareStyle: { backgroundColor: '#739552' },
-                lightSquareStyle: { backgroundColor: '#ebecd0' },
+                darkSquareStyle: { backgroundColor: 'var(--board-dark)' },
+                lightSquareStyle: { backgroundColor: 'var(--board-light)' },
                 onPieceDrop: handlePieceDrop,
                 onSquareClick: handleSquareClick,
                 onPieceClick: ({ square }) => handleSquareClick({ square }),
@@ -271,12 +274,12 @@ export function AnalysisBoard() {
           {/* Диалог превращения */}
           {pendingPromotion ? (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70">
-              <div className="rounded-lg border border-zinc-700 bg-[#1a1f27] p-3 shadow-xl">
+              <div className="rounded-lg border border-border bg-panel-input p-3 shadow-xl">
                 <div className="mb-2 flex items-center justify-between gap-4">
-                  <span className="text-sm font-medium text-zinc-300">Во что превратить пешку?</span>
+                  <span className="text-sm font-medium text-foreground/90">Во что превратить пешку?</span>
                   <button
                     onClick={() => setPendingPromotion(null)}
-                    className="text-zinc-500 hover:text-zinc-300"
+                    className="text-muted-foreground hover:text-foreground"
                     aria-label="Отменить превращение"
                   >
                     <X className="h-4 w-4" />
@@ -286,7 +289,7 @@ export function AnalysisBoard() {
                   {(['q', 'r', 'b', 'n'] as const).map((p) => (
                     <button
                       key={p}
-                      className="flex h-12 w-12 items-center justify-center rounded-md border border-zinc-700 bg-[#22262e] text-3xl text-zinc-100 hover:border-emerald-500 hover:bg-[#2a313b]"
+                      className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-panel-input text-3xl text-foreground hover:border-emerald-500 hover:bg-accent"
                       onClick={() => {
                         const pp = pendingPromotion;
                         setPendingPromotion(null);
@@ -314,7 +317,7 @@ export function AnalysisBoard() {
       />
 
       {/* Навигация */}
-      <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-800 pt-2">
+      <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" onClick={goToStart} aria-label="В начало" title="В начало (Home)">
             <ChevronFirst className="h-4 w-4" />
@@ -333,7 +336,7 @@ export function AnalysisBoard() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-muted-foreground">
             Позиция {currentPly} из {fens.length - 1}
           </span>
           <Button

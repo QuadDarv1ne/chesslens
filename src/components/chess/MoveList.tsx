@@ -4,10 +4,12 @@
 import { useEffect, useRef } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useAnalysisStore } from '@/lib/store';
-import { CLASSIFICATION_META, Classification } from '@/lib/chess/analysis';
+import { Classification } from '@/lib/chess/analysis';
+import { useClassificationMeta } from '@/lib/theme';
 
 function ClassBadge({ cls }: { cls: Classification }) {
-  const meta = CLASSIFICATION_META[cls];
+  const metaMap = useClassificationMeta();
+  const meta = metaMap[cls];
   return (
     <span
       className="inline-flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[9px] font-bold leading-none"
@@ -58,7 +60,7 @@ export function MoveList() {
         ref={active ? currentRef : undefined}
         onClick={() => goTo(ply)}
         className={`group flex items-center gap-1 rounded px-1.5 py-0.5 text-left text-sm font-medium transition-colors ${
-          active ? 'bg-emerald-600/25 text-emerald-300' : 'text-zinc-300 hover:bg-zinc-800/80'
+          active ? 'bg-emerald-600/20 text-emerald-700 night:text-emerald-300' : 'text-foreground/90 hover:bg-accent'
         }`}
       >
         <span>{sans[ply - 1]}</span>
@@ -70,9 +72,9 @@ export function MoveList() {
 
   if (sans.length === 0) {
     return (
-      <div className="rounded-xl border border-zinc-800 bg-[#12151b] p-4">
-        <h3 className="mb-2 text-sm font-semibold text-zinc-300">Ходы партии</h3>
-        <p className="text-sm text-zinc-500">
+      <div className="rounded-xl border border-border bg-panel p-4">
+        <h3 className="mb-2 text-sm font-semibold text-foreground/90">Ходы партии</h3>
+        <p className="text-sm text-muted-foreground">
           Загрузите партию (PGN, lichess, chess.com) или сделайте ходы на доске.
         </p>
       </div>
@@ -80,17 +82,17 @@ export function MoveList() {
   }
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#12151b]">
-      <div className="flex flex-wrap items-center justify-between gap-1 border-b border-zinc-800 px-3 py-2">
-        <h3 className="text-sm font-semibold text-zinc-300">Ходы партии</h3>
+    <div className="rounded-xl border border-border bg-panel">
+      <div className="flex flex-wrap items-center justify-between gap-1 border-b border-border px-3 py-2">
+        <h3 className="text-sm font-semibold text-foreground/90">Ходы партии</h3>
         <div className="flex items-center gap-1.5">
           {opening ? (
-            <span className="max-w-[220px] truncate rounded-full bg-[#1d232c] px-2 py-0.5 text-xs text-amber-300/90" title={opening}>
+            <span className="max-w-[220px] truncate rounded-full bg-accent px-2 py-0.5 text-xs text-opening" title={opening}>
               {opening}
             </span>
           ) : null}
           {resultLabel ? (
-            <span className="rounded-full bg-[#1d232c] px-2 py-0.5 text-xs text-zinc-400">{resultLabel}</span>
+            <span className="rounded-full bg-accent px-2 py-0.5 text-xs text-muted-foreground">{resultLabel}</span>
           ) : null}
         </div>
       </div>
@@ -98,7 +100,7 @@ export function MoveList() {
         <div className="grid grid-cols-[2.2rem_1fr_1fr] items-center gap-x-1 gap-y-0.5">
           {rows.map((row) => (
             <div key={row.no} className="contents">
-              <span className="select-none pr-1 text-right text-xs text-zinc-600">{row.no}.</span>
+              <span className="select-none pr-1 text-right text-xs text-muted-foreground/70">{row.no}.</span>
               {row.whitePly ? moveButton(row.whitePly, true) : <span />}
               {row.blackPly ? moveButton(row.blackPly, false) : <span />}
             </div>

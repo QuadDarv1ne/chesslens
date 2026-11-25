@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* Псевдо-вариант night: все тёмные темы (тёмная, синяя, изумрудная) */
+@custom-variant night (&:is(.dark, .dark *, .blue, .blue *, .green, .green *));
 
 @theme inline {
   --color-background: var(--background);
@@ -41,11 +43,19 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* Дополнительные поверхности приложения */
+  --color-panel: var(--panel);
+  --color-panel-soft: var(--panel-soft);
+  --color-panel-input: var(--panel-input);
+  --color-opening: var(--opening);
 }
 
+/* ============================================================
+   ТЕМА 1: Светлая (по умолчанию)
+   ============================================================ */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -57,11 +67,11 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: oklch(0.955 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: oklch(0.905 0 0);
+  --input: oklch(0.905 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -76,40 +86,224 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Поверхности приложения */
+  --panel: oklch(0.968 0 0);
+  --panel-soft: oklch(0.935 0 0);
+  --panel-input: oklch(1 0 0);
+  --opening: oklch(0.55 0.12 70);
+  /* Доска и график */
+  --board-light: #eeeed2;
+  --board-dark: #769656;
+  --eval-white: #f1f0ee;
+  --eval-black: #33312e;
+  --graph-white: #d9d9d6;
+  --graph-black: #56565e;
+  --graph-mid: #a6a6ad;
+  --scroll-thumb: oklch(0.8 0 0);
 }
 
+/* ============================================================
+   ТЕМА 2: Тёмная (графит — прежний вид приложения)
+   ============================================================ */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
+  --background: oklch(0.165 0.012 250);
+  --foreground: oklch(0.92 0.005 250);
+  --card: oklch(0.19 0.012 250);
+  --card-foreground: oklch(0.92 0.005 250);
+  --popover: oklch(0.19 0.012 250);
+  --popover-foreground: oklch(0.92 0.005 250);
+  --primary: oklch(0.92 0 0);
   --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.26 0.01 250);
+  --secondary-foreground: oklch(0.92 0.005 250);
+  --muted: oklch(0.26 0.01 250);
+  --muted-foreground: oklch(0.70 0.01 250);
+  --accent: oklch(0.27 0.01 250);
+  --accent-foreground: oklch(0.92 0.005 250);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(0.19 0.012 250);
+  --sidebar-foreground: oklch(0.92 0.005 250);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.27 0.01 250);
+  --sidebar-accent-foreground: oklch(0.92 0.005 250);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Поверхности приложения */
+  --panel: oklch(0.19 0.012 250);
+  --panel-soft: oklch(0.155 0.012 250);
+  --panel-input: oklch(0.215 0.012 250);
+  --opening: oklch(0.83 0.11 85);
+  /* Доска и график */
+  --board-light: #ebecd0;
+  --board-dark: #739552;
+  --eval-white: #e7e6e3;
+  --eval-black: #22262e;
+  --graph-white: #d6d3cf;
+  --graph-black: #333a45;
+  --graph-mid: #3f4854;
+  --scroll-thumb: #2a313b;
+}
+
+/* ============================================================
+   ТЕМА 3: Синяя ночь
+   ============================================================ */
+.blue {
+  --background: oklch(0.155 0.035 262);
+  --foreground: oklch(0.90 0.015 250);
+  --card: oklch(0.185 0.035 262);
+  --card-foreground: oklch(0.90 0.015 250);
+  --popover: oklch(0.185 0.035 262);
+  --popover-foreground: oklch(0.90 0.015 250);
+  --primary: oklch(0.88 0.02 250);
+  --primary-foreground: oklch(0.18 0.03 262);
+  --secondary: oklch(0.26 0.033 262);
+  --secondary-foreground: oklch(0.90 0.015 250);
+  --muted: oklch(0.26 0.033 262);
+  --muted-foreground: oklch(0.70 0.025 250);
+  --accent: oklch(0.27 0.035 262);
+  --accent-foreground: oklch(0.90 0.015 250);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.55 0.05 250);
+  --chart-1: oklch(0.55 0.15 250);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.185 0.035 262);
+  --sidebar-foreground: oklch(0.90 0.015 250);
+  --sidebar-primary: oklch(0.55 0.15 250);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.27 0.035 262);
+  --sidebar-accent-foreground: oklch(0.90 0.015 250);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.55 0.05 250);
+  /* Поверхности приложения */
+  --panel: oklch(0.185 0.035 262);
+  --panel-soft: oklch(0.145 0.033 262);
+  --panel-input: oklch(0.215 0.037 262);
+  --opening: oklch(0.85 0.1 85);
+  /* Доска и график */
+  --board-light: #e3e9f4;
+  --board-dark: #6c86b8;
+  --eval-white: #e9edf5;
+  --eval-black: #1d2740;
+  --graph-white: #ccd6ea;
+  --graph-black: #2c3c60;
+  --graph-mid: #3f5078;
+  --scroll-thumb: #26314e;
+}
+
+/* ============================================================
+   ТЕМА 4: Изумрудная роща
+   ============================================================ */
+.green {
+  --background: oklch(0.16 0.02 165);
+  --foreground: oklch(0.92 0.01 150);
+  --card: oklch(0.19 0.02 165);
+  --card-foreground: oklch(0.92 0.01 150);
+  --popover: oklch(0.19 0.02 165);
+  --popover-foreground: oklch(0.92 0.01 150);
+  --primary: oklch(0.90 0.01 155);
+  --primary-foreground: oklch(0.17 0.02 165);
+  --secondary: oklch(0.26 0.02 165);
+  --secondary-foreground: oklch(0.92 0.01 150);
+  --muted: oklch(0.26 0.02 165);
+  --muted-foreground: oklch(0.70 0.015 155);
+  --accent: oklch(0.27 0.02 165);
+  --accent-foreground: oklch(0.92 0.01 150);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.55 0.03 160);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.19 0.02 165);
+  --sidebar-foreground: oklch(0.92 0.01 150);
+  --sidebar-primary: oklch(0.696 0.17 162.48);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.27 0.02 165);
+  --sidebar-accent-foreground: oklch(0.92 0.01 150);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.55 0.03 160);
+  /* Поверхности приложения */
+  --panel: oklch(0.19 0.02 165);
+  --panel-soft: oklch(0.15 0.02 165);
+  --panel-input: oklch(0.215 0.02 165);
+  --opening: oklch(0.83 0.11 85);
+  /* Доска и график */
+  --board-light: #e9e8d8;
+  --board-dark: #64855a;
+  --eval-white: #ecebe3;
+  --eval-black: #20291f;
+  --graph-white: #d2dbc9;
+  --graph-black: #2d4237;
+  --graph-mid: #3e5448;
+  --scroll-thumb: #243028;
+}
+
+/* ============================================================
+   ТЕМА 5: Сепия (светлая, «бумажная»)
+   ============================================================ */
+.sepia {
+  --background: oklch(0.945 0.02 88);
+  --foreground: oklch(0.32 0.03 60);
+  --card: oklch(0.965 0.015 88);
+  --card-foreground: oklch(0.32 0.03 60);
+  --popover: oklch(0.975 0.012 88);
+  --popover-foreground: oklch(0.32 0.03 60);
+  --primary: oklch(0.35 0.05 60);
+  --primary-foreground: oklch(0.965 0.015 88);
+  --secondary: oklch(0.905 0.02 85);
+  --secondary-foreground: oklch(0.32 0.03 60);
+  --muted: oklch(0.905 0.02 85);
+  --muted-foreground: oklch(0.52 0.03 65);
+  --accent: oklch(0.90 0.025 82);
+  --accent-foreground: oklch(0.32 0.03 60);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.80 0.03 80);
+  --input: oklch(0.80 0.03 80);
+  --ring: oklch(0.6 0.04 70);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.965 0.015 88);
+  --sidebar-foreground: oklch(0.32 0.03 60);
+  --sidebar-primary: oklch(0.35 0.05 60);
+  --sidebar-primary-foreground: oklch(0.965 0.015 88);
+  --sidebar-accent: oklch(0.905 0.02 85);
+  --sidebar-accent-foreground: oklch(0.32 0.03 60);
+  --sidebar-border: oklch(0.80 0.03 80);
+  --sidebar-ring: oklch(0.6 0.04 70);
+  /* Поверхности приложения */
+  --panel: oklch(0.965 0.015 88);
+  --panel-soft: oklch(0.905 0.02 85);
+  --panel-input: oklch(0.985 0.01 90);
+  --opening: oklch(0.55 0.11 65);
+  /* Доска и график */
+  --board-light: #f0d9b5;
+  --board-dark: #b58863;
+  --eval-white: #fdfbf5;
+  --eval-black: #433927;
+  --graph-white: #e2d7c0;
+  --graph-black: #5f5138;
+  --graph-mid: #a79a7d;
+  --scroll-thumb: oklch(0.82 0.02 85);
 }
 
 @layer base {
@@ -121,7 +315,7 @@
   }
 }
 
-/* Тонкий скроллбар для панелей */
+/* Тонкий скроллбар для панелей (цвет зависит от темы) */
 .scroll-slim::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -130,13 +324,10 @@
   background: transparent;
 }
 .scroll-slim::-webkit-scrollbar-thumb {
-  background: #2a313b;
+  background: var(--scroll-thumb);
   border-radius: 3px;
-}
-.scroll-slim::-webkit-scrollbar-thumb:hover {
-  background: #3a4350;
 }
 .scroll-slim {
   scrollbar-width: thin;
-  scrollbar-color: #2a313b transparent;
+  scrollbar-color: var(--scroll-thumb) transparent;
 }

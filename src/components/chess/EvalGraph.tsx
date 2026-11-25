@@ -40,7 +40,8 @@ export function EvalGraph() {
       const avg = (a.win + b.win) / 2;
       const yMid = H - MID;
       // Область между кривой и средней линией: выше середины — территория белых.
-      const fill = avg >= 50 ? '#d6d3cf' : '#333a45';
+      // Цвета берутся из темы оформления (var(--graph-white/black)).
+      const fill = avg >= 50 ? 'var(--graph-white)' : 'var(--graph-black)';
       const d =
         `M ${a.x} ${yMid} L ${a.x} ${a.y} L ${b.x} ${b.y} L ${b.x} ${yMid} Z`;
       segs.push({ d, fill });
@@ -76,18 +77,18 @@ export function EvalGraph() {
   const hasData = points.some((p) => p.defined);
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#12151b] p-4">
+    <div className="rounded-xl border border-border bg-panel p-4">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-zinc-300">График оценки</h3>
+        <h3 className="text-sm font-semibold text-foreground/90">График оценки</h3>
         {hasData && markerEval ? (
-          <span className="text-xs text-zinc-400">
+          <span className="text-xs text-muted-foreground">
             {markerPly > 0 && sans[markerPly - 1] ? (
               <span className="font-mono">
                 {Math.ceil(markerPly / 2)}
                 {markerPly % 2 === 1 ? '.' : '...'} {sans[markerPly - 1]} ·{' '}
               </span>
             ) : null}
-            <span className="font-semibold text-zinc-200">{formatEval(markerEval)}</span>
+            <span className="font-semibold text-foreground">{formatEval(markerEval)}</span>
           </span>
         ) : null}
       </div>
@@ -112,13 +113,13 @@ export function EvalGraph() {
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
             preserveAspectRatio="none"
-            className="block h-[130px] w-full rounded-md bg-[#0d1015]"
+            className="block h-[130px] w-full rounded-md bg-panel-soft"
           >
             {/* середина */}
-            <line x1={0} y1={MID} x2={W} y2={MID} stroke="#3f4854" strokeWidth={1} strokeDasharray="4 4" />
+            <line x1={0} y1={MID} x2={W} y2={MID} style={{ stroke: 'var(--graph-mid)' }} strokeWidth={1} strokeDasharray="4 4" />
             {/* области перевеса */}
             {segments.map((s, i) => (
-              <path key={i} d={s.d} fill={s.fill} opacity={0.9} />
+              <path key={i} d={s.d} style={{ fill: s.fill }} opacity={0.9} />
             ))}
             {/* кривая */}
             <path d={linePath} fill="none" stroke="#10b981" strokeWidth={2} />
@@ -126,17 +127,17 @@ export function EvalGraph() {
             {markerPoint ? (
               <>
                 <line x1={markerPoint.x} y1={0} x2={markerPoint.x} y2={H} stroke="#10b981" strokeWidth={1} opacity={0.6} />
-                <circle cx={markerPoint.x} cy={markerPoint.y} r={4} fill="#10b981" stroke="#0d1015" strokeWidth={1.5} />
+                <circle cx={markerPoint.x} cy={markerPoint.y} r={4} fill="#10b981" style={{ stroke: 'var(--panel-soft)' }} strokeWidth={1.5} />
               </>
             ) : null}
           </svg>
         ) : (
-          <div className="flex h-[130px] items-center justify-center rounded-md bg-[#0d1015] text-sm text-zinc-600">
+          <div className="flex h-[130px] items-center justify-center rounded-md bg-panel-soft text-sm text-muted-foreground/70">
             График появится после анализа партии
           </div>
         )}
       </div>
-      <div className="mt-1.5 flex justify-between text-[10px] text-zinc-600">
+      <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground/70">
         <span>▲ перевес белых</span>
         <span>▼ перевес чёрных</span>
       </div>
