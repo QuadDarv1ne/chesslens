@@ -33,7 +33,19 @@ export function MoveList() {
   const currentRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    currentRef.current?.scrollIntoView({ block: 'nearest' });
+    // Прокручиваем только внутренний контейнер списка.
+    // scrollIntoView здесь нельзя: он прокручивает и саму страницу,
+    // из-за чего при каждом ходе страница «дёргалась» вниз к списку ходов.
+    const list = listRef.current;
+    const el = currentRef.current;
+    if (!list || !el) return;
+    const listRect = list.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    if (elRect.top < listRect.top) {
+      list.scrollTop += elRect.top - listRect.top;
+    } else if (elRect.bottom > listRect.bottom) {
+      list.scrollTop += elRect.bottom - listRect.bottom;
+    }
   }, [currentPly]);
 
   // Строим строки: номер, ход белых, ход чёрных.
@@ -96,7 +108,7 @@ export function MoveList() {
           ) : null}
         </div>
       </div>
-      <div className="scroll-slim max-h-[300px] overflow-y-auto p-2">
+      <div ref={listRef} className="scroll-slim max-h-[300px] overflow-y-auto p-2">
         <div className="grid grid-cols-[2.2rem_1fr_1fr] items-center gap-x-1 gap-y-0.5">
           {rows.map((row) => (
             <div key={row.no} className="contents">
