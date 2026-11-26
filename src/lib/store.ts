@@ -322,7 +322,7 @@ export const useAnalysisStore = create<AnalysisStore>((set, get) => ({
   },
 
   deepenCurrent: () => {
-    const { fens, currentPly, analyzing, sans, analyses } = get();
+    const { fens, currentPly, analyzing } = get();
     if (analyzing) return;
     const token = ++runToken;
     set({ analyzing: true, engineStatus: 'analyzing', progressTotal: 1, progressDone: 0 });
@@ -376,8 +376,6 @@ export const useAnalysisStore = create<AnalysisStore>((set, get) => ({
       finishSummary(set, get);
       set({ analyzing: false, engineStatus: 'ready', progressTotal: 0 });
     })();
-    void analyses;
-    void sans;
   },
 
   clearError: () => set({ error: null }),

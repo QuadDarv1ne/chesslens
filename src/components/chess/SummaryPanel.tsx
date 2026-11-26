@@ -64,7 +64,6 @@ function PlayerRow({
 }
 
 export function SummaryPanel() {
-  const metaMap = useClassificationMeta();
   const summary = useAnalysisStore((s) => s.summary);
   const opening = useAnalysisStore((s) => s.opening);
   const headers = useAnalysisStore((s) => s.headers);

@@ -334,16 +334,16 @@ export function AnalysisBoard() {
       {/* Навигация */}
       <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={goToStart} aria-label="В начало" title="В начало (Home)">
+          <Button variant="ghost" size="icon" onClick={goToStart} disabled={currentPly === 0} aria-label="В начало" title="В начало (Home)">
             <ChevronFirst className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => step(-1)} aria-label="Назад" title="Назад (←)">
+          <Button variant="ghost" size="icon" onClick={() => step(-1)} disabled={currentPly === 0} aria-label="Назад" title="Назад (←)">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => step(1)} aria-label="Вперёд" title="Вперёд (→)">
+          <Button variant="ghost" size="icon" onClick={() => step(1)} disabled={currentPly >= fens.length - 1} aria-label="Вперёд" title="Вперёд (→)">
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={goToEnd} aria-label="В конец" title="В конец (End)">
+          <Button variant="ghost" size="icon" onClick={goToEnd} disabled={currentPly >= fens.length - 1} aria-label="В конец" title="В конец (End)">
             <ChevronLast className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" onClick={flip} aria-label="Перевернуть доску" title="Перевернуть доску">

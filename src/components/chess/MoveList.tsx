@@ -1,7 +1,7 @@
 'use client';
 
 // Список ходов с иконками классификации (как в известных сервисах анализа).
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useAnalysisStore } from '@/lib/store';
 import { Classification } from '@/lib/chess/analysis';
@@ -60,16 +60,18 @@ export function MoveList() {
   const moveNo = (p: number) =>
     startMoveNo + (startTurn === 'w' ? Math.floor((p - 1) / 2) : Math.floor(p / 2));
 
-  // Группируем полуходы в строки по номеру хода.
-  const rowMap = new Map<number, { no: number; whitePly?: number; blackPly?: number }>();
-  for (let p = 1; p <= sans.length; p++) {
-    const no = moveNo(p);
-    const row = rowMap.get(no) ?? { no };
-    if (isWhitePly(p)) row.whitePly = p;
-    else row.blackPly = p;
-    rowMap.set(no, row);
-  }
-  const rows = Array.from(rowMap.values()).sort((a, b) => a.no - b.no);
+  // Группируем полуходы в строки по номеру хода — пересчитываем только при изменении партии.
+  const rows = useMemo(() => {
+    const rowMap = new Map<number, { no: number; whitePly?: number; blackPly?: number }>();
+    for (let p = 1; p <= sans.length; p++) {
+      const no = moveNo(p);
+      const row = rowMap.get(no) ?? { no };
+      if (isWhitePly(p)) row.whitePly = p;
+      else row.blackPly = p;
+      rowMap.set(no, row);
+    }
+    return Array.from(rowMap.values()).sort((a, b) => a.no - b.no);
+  }, [sans, fens]);
 
   const result = headers.Result ?? '';
   const resultLabel =

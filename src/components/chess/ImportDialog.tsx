@@ -73,7 +73,17 @@ const SPEED_RU_LOCAL: Record<string, string> = {
   blitz: 'Блиц',
   rapid: 'Рапид',
   daily: 'По переписке',
+  classical: 'Классика',
 };
+
+/** Читает JSON-ответ прокси, не падая на не-JSON (HTML ошибки, пустой ответ). */
+async function readJson(res: Response): Promise<{ error?: string; games?: ImportedGame[] }> {
+  try {
+    return (await res.json()) as { error?: string; games?: ImportedGame[] };
+  } catch {
+    return { error: `Сервер вернул неожиданный ответ (${res.status})` };
+  }
+}
 
 async function fetchChesscomDirect(username: string, max: number): Promise<ImportedGame[]> {
   const u = username.toLowerCase();
@@ -128,13 +138,13 @@ function SourceImport({ source, onLoaded }: { source: 'lichess' | 'chesscom'; on
         } catch {
           // Фолбэк на серверный прокси (если прямой запрос из браузера не прошёл).
           const res = await fetch(`/api/import/chesscom?username=${encodeURIComponent(username.trim())}&max=15`);
-          const data = await res.json();
+          const data = await readJson(res);
           if (!res.ok) throw new Error(data.error ?? 'Не удалось получить партии');
           games = data.games ?? [];
         }
       } else {
         const res = await fetch(`/api/import/lichess?username=${encodeURIComponent(username.trim())}&max=15`);
-        const data = await res.json();
+        const data = await readJson(res);
         if (!res.ok) throw new Error(data.error ?? 'Не удалось получить партии');
         games = data.games ?? [];
       }
