@@ -124,6 +124,11 @@ export function EvalGraph() {
         aria-valuenow={currentPly}
         aria-valuemin={0}
         aria-valuemax={Math.max(0, fens.length - 1)}
+        aria-valuetext={
+          markerPly > 0 && sans[markerPly - 1]
+            ? `Позиция ${markerPly}, ход ${sans[markerPly - 1]}, оценка ${markerEval ? formatEval(markerEval) : 'нет'}`
+            : 'Начальная позиция'
+        }
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'ArrowLeft') goTo(Math.max(0, currentPly - 1));

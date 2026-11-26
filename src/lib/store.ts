@@ -226,9 +226,14 @@ export const useAnalysisStore = create<AnalysisStore>((set, get) => ({
       set({ depth: depthOverride });
     }
     if (depthOverride !== undefined) {
-      // Явный перезапуск — сбрасываем все оценки.
+      // Явный перезапуск — сбрасываем все оценки, комментарии и итоги,
+      // чтобы UI не показывал устаревшие данные, пока идёт новый расчёт.
       runToken++;
-      set({ analyses: new Array(fens.length).fill(undefined) });
+      set({
+        analyses: new Array(fens.length).fill(undefined),
+        moveMeta: new Array(get().sans.length).fill(undefined),
+        summary: null,
+      });
       startFrom = 0;
     }
     const currentAnalyses = get().analyses;
