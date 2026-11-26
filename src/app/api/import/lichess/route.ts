@@ -1,6 +1,7 @@
 // Импорт последних партий пользователя с lichess.org.
 // GET /api/import/lichess?username=drnykterstein&max=15
 import { NextRequest, NextResponse } from 'next/server';
+import { cacheGet, cacheSet } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,12 @@ export async function GET(req: NextRequest) {
 
   if (!/^[a-zA-Z0-9_-]{2,30}$/.test(username)) {
     return NextResponse.json({ error: 'Укажите корректный ник на lichess' }, { status: 400 });
+  }
+
+  const cacheKey = `lichess:${username.toLowerCase()}:${max}`;
+  const cached = cacheGet<ImportedGame[]>(cacheKey);
+  if (cached) {
+    return NextResponse.json({ games: cached, cached: true });
   }
 
   try {
@@ -91,6 +98,7 @@ export async function GET(req: NextRequest) {
         // пропускаем некорректные строки
       }
     }
+    if (games.length > 0) cacheSet(cacheKey, games, 5 * 60 * 1000);
     return NextResponse.json({ games });
   } catch {
     return NextResponse.json({ error: 'Не удалось связаться с lichess.org' }, { status: 502 });

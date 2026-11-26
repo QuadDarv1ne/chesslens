@@ -1,6 +1,7 @@
 // Импорт последних партий пользователя с chess.com.
 // GET /api/import/chesscom?username=hikaru&max=15
 import { NextRequest, NextResponse } from 'next/server';
+import { cacheGet, cacheSet } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,12 @@ export async function GET(req: NextRequest) {
 
   if (!/^[a-zA-Z0-9_-]{3,30}$/.test(username)) {
     return NextResponse.json({ error: 'Укажите корректный ник на chess.com' }, { status: 400 });
+  }
+
+  const cacheKey = `chesscom:${username.toLowerCase()}:${max}`;
+  const cached = cacheGet<ImportedGame[]>(cacheKey);
+  if (cached) {
+    return NextResponse.json({ games: cached, cached: true });
   }
 
   const fetchJson = async (url: string): Promise<unknown> => {
@@ -96,7 +103,9 @@ export async function GET(req: NextRequest) {
     if (games.length === 0) {
       return NextResponse.json({ error: 'У пользователя пока нет партий' }, { status: 404 });
     }
-    return NextResponse.json({ games: games.slice(0, max) });
+    const result = games.slice(0, max);
+    cacheSet(cacheKey, result, 5 * 60 * 1000);
+    return NextResponse.json({ games: result });
   } catch (e) {
     const msg = e instanceof Error && e.message === '404' ? `Пользователь «${username}» на chess.com не найден` : 'Не удалось связаться с chess.com';
     return NextResponse.json({ error: msg }, { status: 502 });
