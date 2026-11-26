@@ -17,12 +17,29 @@ const targets = [
   { from: path.join(root, 'public'), to: path.join(standalone, 'public') },
 ];
 
+/** Удаляет каталог с несколькими попытками — на Windows файлы могут быть кратко заблокированы. */
+function removeWithRetry(dir) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+      return;
+    } catch (e) {
+      if (attempt === 4) throw e;
+      // Короткая синхронная пауза между попытками.
+      const until = Date.now() + 150 * (attempt + 1);
+      while (Date.now() < until) {
+        // busy-wait
+      }
+    }
+  }
+}
+
 for (const { from, to } of targets) {
   if (!fs.existsSync(from)) {
     console.warn(`Пропущено (нет источника): ${path.relative(root, from)}`);
     continue;
   }
-  fs.rmSync(to, { recursive: true, force: true });
+  removeWithRetry(to);
   fs.cpSync(from, to, { recursive: true });
   console.log(`Скопировано: ${path.relative(root, from)} -> ${path.relative(root, to)}`);
 }
