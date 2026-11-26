@@ -38,15 +38,19 @@ export async function GET(req: NextRequest) {
   try {
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), 20000);
-    const res = await fetch(
-      `https://lichess.org/api/games/user/${encodeURIComponent(username)}?max=${max}&pgnInJson=true&clocks=false&evals=false&opening=false`,
-      {
-        headers: { Accept: 'application/x-ndjson' },
-        signal: controller.signal,
-        cache: 'no-store',
-      },
-    );
-    clearTimeout(t);
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://lichess.org/api/games/user/${encodeURIComponent(username)}?max=${max}&pgnInJson=true&clocks=false&evals=false&opening=false`,
+        {
+          headers: { Accept: 'application/x-ndjson' },
+          signal: controller.signal,
+          cache: 'no-store',
+        },
+      );
+    } finally {
+      clearTimeout(t);
+    }
 
     if (res.status === 404) {
       return NextResponse.json({ error: `Пользователь «${username}» на lichess не найден` }, { status: 404 });

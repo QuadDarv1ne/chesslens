@@ -23,6 +23,7 @@ function ClassBadge({ cls }: { cls: Classification }) {
 
 export function MoveList() {
   const sans = useAnalysisStore((s) => s.sans);
+  const fens = useAnalysisStore((s) => s.fens);
   const moveMeta = useAnalysisStore((s) => s.moveMeta);
   const currentPly = useAnalysisStore((s) => s.currentPly);
   const headers = useAnalysisStore((s) => s.headers);
@@ -48,16 +49,27 @@ export function MoveList() {
     }
   }, [currentPly]);
 
-  // Строим строки: номер, ход белых, ход чёрных.
-  const rows: { no: number; whitePly?: number; blackPly?: number }[] = [];
+  // Сторона первого полухода и стартовый номер хода берутся из FEN,
+  // чтобы корректно отображать задачи/фрагменты, начинающиеся с хода чёрных.
+  const startTurn: 'w' | 'b' = fens[0]?.split(' ')[1] === 'b' ? 'b' : 'w';
+  const startMoveNo = (() => {
+    const n = parseInt(fens[0]?.split(' ')[5] ?? '1', 10);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  })();
+  const isWhitePly = (p: number) => (startTurn === 'w' ? p % 2 === 1 : p % 2 === 0);
+  const moveNo = (p: number) =>
+    startMoveNo + (startTurn === 'w' ? Math.floor((p - 1) / 2) : Math.floor(p / 2));
+
+  // Группируем полуходы в строки по номеру хода.
+  const rowMap = new Map<number, { no: number; whitePly?: number; blackPly?: number }>();
   for (let p = 1; p <= sans.length; p++) {
-    const no = Math.ceil(p / 2);
-    if (p % 2 === 1) {
-      rows.push({ no, whitePly: p, blackPly: p + 1 <= sans.length ? p + 1 : undefined });
-    } else if (p === sans.length) {
-      // чёрный ход без пары после обрезки — пропускаем, добавится в предыдущую строку
-    }
+    const no = moveNo(p);
+    const row = rowMap.get(no) ?? { no };
+    if (isWhitePly(p)) row.whitePly = p;
+    else row.blackPly = p;
+    rowMap.set(no, row);
   }
+  const rows = Array.from(rowMap.values()).sort((a, b) => a.no - b.no);
 
   const result = headers.Result ?? '';
   const resultLabel =

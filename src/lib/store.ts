@@ -389,10 +389,11 @@ type Setter = (partial: Partial<AnalysisStore> | ((s: AnalysisStore) => Partial<
 type Getter = () => AnalysisStore;
 
 function finishSummary(set: Setter, get: Getter): void {
-  const { sans, analyses, moveMeta, headers, opening, openingPrefixLen } = get();
+  const { fens, sans, analyses, moveMeta, headers, opening, openingPrefixLen } = get();
   const analyzedCount = analyses.filter(Boolean).length;
   if (analyzedCount === 0) return;
   const summary = computeSummary({
+    fens,
     sans,
     moveMeta,
     analyses,

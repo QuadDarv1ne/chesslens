@@ -137,6 +137,14 @@ class StockfishEngine {
             }
             const timer = setTimeout(() => {
               this.stop();
+              // Если bestmove не пришёл за 5 секунд после stop — отклоняем промис,
+              // чтобы не заблокировать очередь навсегда.
+              setTimeout(() => {
+                if (this.active?.resolve === resolve) {
+                  this.active = null;
+                  reject(new Error('Таймаут: движок не ответил'));
+                }
+              }, 5000);
             }, 45000);
             const turn = fen.split(' ')[1] === 'b' ? 'b' : 'w';
             this.active = {

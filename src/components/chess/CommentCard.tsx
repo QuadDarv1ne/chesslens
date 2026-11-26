@@ -16,8 +16,17 @@ export function CommentCard() {
   const opening = useAnalysisStore((s) => s.opening);
 
   const meta = currentPly >= 1 ? moveMeta[currentPly - 1] : undefined;
-  const moveNo = Math.ceil(currentPly / 2);
-  const isWhite = currentPly % 2 === 1;
+  // Сторона и номер хода с учётом возможного старта с хода чёрных (FEN-задачи).
+  const startTurn: 'w' | 'b' = fens[0]?.split(' ')[1] === 'b' ? 'b' : 'w';
+  const startMoveNo = (() => {
+    const n = parseInt(fens[0]?.split(' ')[5] ?? '1', 10);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  })();
+  const isWhite = currentPly >= 1 && (startTurn === 'w' ? currentPly % 2 === 1 : currentPly % 2 === 0);
+  const moveNo =
+    currentPly >= 1
+      ? startMoveNo + (startTurn === 'w' ? Math.floor((currentPly - 1) / 2) : Math.floor(currentPly / 2))
+      : startMoveNo;
 
   return (
     <div className="rounded-xl border border-border bg-panel p-4">

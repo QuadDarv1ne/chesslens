@@ -33,10 +33,11 @@ export function EvalGraph() {
 
   const segments = useMemo(() => {
     const segs: { d: string; fill: string }[] = [];
-    const pts = points.filter((p) => p.defined);
-    for (let i = 1; i < pts.length; i++) {
-      const a = pts[i - 1];
-      const b = pts[i];
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1];
+      const b = points[i];
+      // Не соединяем разрыв: если позиция не оценена, кривая прерывается.
+      if (!a.defined || !b.defined) continue;
       const avg = (a.win + b.win) / 2;
       const yMid = H - MID;
       // Область между кривой и средней линией: выше середины — территория белых.
@@ -50,9 +51,20 @@ export function EvalGraph() {
   }, [points]);
 
   const linePath = useMemo(() => {
-    const pts = points.filter((p) => p.defined);
-    if (pts.length === 0) return '';
-    return 'M ' + pts.map((p) => `${p.x} ${p.y}`).join(' L ');
+    const parts: string[] = [];
+    let d = '';
+    for (const p of points) {
+      if (!p.defined) {
+        if (d) {
+          parts.push(d);
+          d = '';
+        }
+        continue;
+      }
+      d += (d ? ' L ' : 'M ') + `${p.x} ${p.y}`;
+    }
+    if (d) parts.push(d);
+    return parts.join(' ');
   }, [points]);
 
   const plyFromEvent = (clientX: number) => {
@@ -76,6 +88,16 @@ export function EvalGraph() {
   const markerEval = analyses[markerPly];
   const hasData = points.some((p) => p.defined);
 
+  // Номер и сторона хода — из FEN, чтобы корректно работать с FEN-задачами.
+  const startTurn: 'w' | 'b' = fens[0]?.split(' ')[1] === 'b' ? 'b' : 'w';
+  const startMoveNo = (() => {
+    const n = parseInt(fens[0]?.split(' ')[5] ?? '1', 10);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  })();
+  const isWhitePly = (p: number) => (startTurn === 'w' ? p % 2 === 1 : p % 2 === 0);
+  const moveNo = (p: number) =>
+    startMoveNo + (startTurn === 'w' ? Math.floor((p - 1) / 2) : Math.floor(p / 2));
+
   return (
     <div className="rounded-xl border border-border bg-panel p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -84,8 +106,8 @@ export function EvalGraph() {
           <span className="text-xs text-muted-foreground">
             {markerPly > 0 && sans[markerPly - 1] ? (
               <span className="font-mono">
-                {Math.ceil(markerPly / 2)}
-                {markerPly % 2 === 1 ? '.' : '...'} {sans[markerPly - 1]} ·{' '}
+                {moveNo(markerPly)}
+                {isWhitePly(markerPly) ? '.' : '...'} {sans[markerPly - 1]} ·{' '}
               </span>
             ) : null}
             <span className="font-semibold text-foreground">{formatEval(markerEval)}</span>

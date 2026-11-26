@@ -80,6 +80,7 @@ export function AnalysisBoard() {
   const headers = useAnalysisStore((s) => s.headers);
   const analyses = useAnalysisStore((s) => s.analyses);
   const summary = useAnalysisStore((s) => s.summary);
+  const sansCount = useAnalysisStore((s) => s.sans.length);
   const currentPly = useAnalysisStore((s) => s.currentPly);
   const orientation = useAnalysisStore((s) => s.orientation);
   const goTo = useAnalysisStore((s) => s.goTo);
@@ -90,7 +91,11 @@ export function AnalysisBoard() {
   const addMove = useAnalysisStore((s) => s.addMove);
 
   const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string } | null>(null);
-  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  // Выделение привязано к номеру позиции: при смене хода оно автоматически сбрасывается,
+  // без setState в эффекте (подсветка не «залипает» на прошлом ходе).
+  const [selection, setSelection] = useState<{ square: string; ply: number } | null>(null);
+  const selectedSquare = selection && selection.ply === currentPly ? selection.square : null;
+  const setSelectedSquare = (square: string | null) => setSelection(square ? { square, ply: currentPly } : null);
 
   const fen = fens[Math.min(currentPly, fens.length - 1)];
   const currentEval = analyses[currentPly];
@@ -155,7 +160,7 @@ export function AnalysisBoard() {
   const playerAccuracy = (color: 'white' | 'black') => {
     if (!summary) return null;
     // Точность показываем только если в партии есть ходы.
-    if (useAnalysisStore.getState().sans.length === 0) return null;
+    if (sansCount === 0) return null;
     return color === 'white' ? summary.white.accuracy : summary.black.accuracy;
   };
 
@@ -201,23 +206,29 @@ export function AnalysisBoard() {
 
   // Клик по клетке: выбор фигуры и ход кликом (удобно на мобильных).
   const handleSquareClick = ({ square }: { square: string }): void => {
+    let probe: Chess;
+    try {
+      probe = new Chess(fen);
+    } catch {
+      return;
+    }
     if (!selectedSquare) {
-      try {
-        const probe = new Chess(fen);
-        const piece = probe.get(square as never);
-        if (piece && piece.color === probe.turn()) setSelectedSquare(square);
-      } catch {
-        // пусто
-      }
+      const piece = probe.get(square as never);
+      if (piece && piece.color === probe.turn()) setSelectedSquare(square);
       return;
     }
     if (square === selectedSquare) {
       setSelectedSquare(null);
       return;
     }
-    const moved = tryMove(selectedSquare, square);
+    // Клик по другой своей фигуре — переключаем выбор, а не пытаемся «съесть» её.
+    const target = probe.get(square as never);
+    if (target && target.color === probe.turn()) {
+      setSelectedSquare(square);
+      return;
+    }
+    tryMove(selectedSquare, square);
     setSelectedSquare(null);
-    void moved;
   };
 
   const evalLabel = formatEval(currentEval);

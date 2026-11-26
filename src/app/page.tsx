@@ -76,7 +76,7 @@ export default function Home() {
             </span>
             <div>
               <span className="block text-sm font-bold leading-tight text-foreground">ChessLens</span>
-              <span className="block text-[11px] leading-tight text-muted-foreground">анализ шахматных партий</span>
+              <span className="hidden text-[11px] leading-tight text-muted-foreground sm:block">анализ шахматных партий</span>
             </div>
             <span className="ml-2 hidden rounded-full border border-emerald-600/30 bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 night:text-emerald-400 sm:inline">
               Stockfish 19 · WASM · в браузере

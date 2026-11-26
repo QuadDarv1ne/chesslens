@@ -244,7 +244,9 @@ export function buildMoveMeta({ fens, sans, analyses, ply, opening }: BuildMetaA
   const evalBefore = analyses[ply - 1];
   const evalAfter = analyses[ply];
   if (!evalBefore || !evalAfter) return undefined;
-  const mover: 'w' | 'b' = ply % 2 === 1 ? 'w' : 'b';
+  // Определяем сторону по FEN первой позиции — корректно и для начальной, и для FEN-задач.
+  const startTurn = fens[0]?.split(' ')[1] === 'b' ? 'b' : 'w';
+  const mover: 'w' | 'b' = (startTurn === 'w' ? (ply % 2 === 1 ? 'w' : 'b') : (ply % 2 === 1 ? 'b' : 'w'));
   const sign = mover === 'w' ? 1 : -1;
 
   // Сколько легальных ходов было в позиции (для пометки "вынужденный").
@@ -349,13 +351,17 @@ export function buildMoveMeta({ fens, sans, analyses, ply, opening }: BuildMetaA
 // ---------- Итоги партии ----------
 
 export function computeSummary(args: {
+  fens: string[];
   sans: string[];
   moveMeta: (MoveMeta | undefined)[];
   analyses: (PlyEval | undefined)[];
   headers: Record<string, string>;
   opening: OpeningMatch | null;
 }): GameSummary {
-  const { sans, moveMeta, analyses, headers, opening } = args;
+  const { fens, sans, moveMeta, analyses, headers, opening } = args;
+  // Сторона первого полухода: у FEN-задач партия может начинаться с хода чёрных.
+  const startTurn = fens[0]?.split(' ')[1] === 'b' ? 'b' : 'w';
+  const isWhitePly = (p: number) => (startTurn === 'w' ? p % 2 === 1 : p % 2 === 0);
 
   const countsW: Partial<Record<Classification, number>> = {};
   const countsB: Partial<Record<Classification, number>> = {};
@@ -367,9 +373,10 @@ export function computeSummary(args: {
   for (let p = 1; p <= sans.length; p++) {
     const meta = moveMeta[p - 1];
     if (!meta) continue;
-    const counts = p % 2 === 1 ? countsW : countsB;
+    const white = isWhitePly(p);
+    const counts = white ? countsW : countsB;
     counts[meta.classification] = (counts[meta.classification] ?? 0) + 1;
-    if (p % 2 === 1) {
+    if (white) {
       accSumW += meta.accuracy;
       nW++;
     } else {
