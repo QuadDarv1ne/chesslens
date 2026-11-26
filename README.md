@@ -36,6 +36,15 @@ bun run build
 bun run start:standalone   # node .next/standalone/server.js
 ```
 
+Проверка данных (дебютный словарь и примеры партий) и линтер:
+
+```bash
+bun run validate:chess
+bun run lint
+```
+
+> `build` использует `node scripts/copy-standalone.js` — работает на Windows/macOS/Linux без `cp`.
+
 ## Деплой
 
 Сервис готов к деплою на три платформы — подробные пошаговые инструкции в [DEPLOY.md](DEPLOY.md):
