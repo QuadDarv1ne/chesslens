@@ -9,10 +9,10 @@
     "node": ">=20.9"
   },
   "scripts": {
-    "dev": "next dev -p 3000 2>&1 | tee dev.log",
+    "dev": "next dev -p 3000",
     "build": "next build && node scripts/copy-standalone.js",
     "postinstall": "prisma generate || true",
-    "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
+    "start": "node scripts/start.js",
     "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint .",
     "validate:chess": "node scripts/validate-chess-data.js",

@@ -33,7 +33,9 @@ bun run dev      # http://localhost:3000
 
 ```bash
 bun run build
-bun run start:standalone   # node .next/standalone/server.js
+bun run start              # node scripts/start.js (NODE_ENV=production)
+# или напрямую:
+node .next/standalone/server.js
 ```
 
 Проверка данных (дебютный словарь и примеры партий) и линтер:
