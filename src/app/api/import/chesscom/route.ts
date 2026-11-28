@@ -2,8 +2,27 @@
 // GET /api/import/chesscom?username=hikaru&max=15
 import { NextRequest, NextResponse } from 'next/server';
 import { cacheGet, cacheSet } from '@/lib/cache';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
+
+function clientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+}
+
+/**
+ * Разрешаем запрашивать только chess.com: URL архивов приходит из ответа
+ * внешнего API, и без проверки хоста подмена ответа превратила бы прокси
+ * в SSRF-инструмент для внутренних адресов.
+ */
+function isChessComUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    return u.protocol === 'https:' && (u.hostname === 'api.chess.com' || u.hostname.endsWith('.chess.com'));
+  } catch {
+    return false;
+  }
+}
 
 export interface ImportedGame {
   source: 'chesscom';
@@ -37,6 +56,11 @@ interface ChessComGame {
 }
 
 export async function GET(req: NextRequest) {
+  // Не более 20 импортов за 5 минут с одного IP — защита внешнего API от абуза.
+  if (!rateLimit(`import-chesscom:${clientIp(req)}`, 20, 5 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Слишком много запросов. Попробуйте позже.' }, { status: 429 });
+  }
+
   const username = req.nextUrl.searchParams.get('username')?.trim() ?? '';
   const max = Math.min(30, Math.max(1, parseInt(req.nextUrl.searchParams.get('max') ?? '15', 10) || 15));
 
@@ -79,6 +103,7 @@ export async function GET(req: NextRequest) {
     // Собираем игры из последних 2 архивов (обычно это 1-2 месяца).
     const games: ImportedGame[] = [];
     for (const archiveUrl of archives.slice(-2).reverse()) {
+      if (!isChessComUrl(archiveUrl)) continue;
       const data = (await fetchJson(archiveUrl)) as { games?: ChessComGame[] };
       for (const g of (data.games ?? []).reverse()) {
         if (games.length >= max) break;

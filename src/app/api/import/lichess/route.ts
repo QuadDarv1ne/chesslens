@@ -2,8 +2,13 @@
 // GET /api/import/lichess?username=drnykterstein&max=15
 import { NextRequest, NextResponse } from 'next/server';
 import { cacheGet, cacheSet } from '@/lib/cache';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
+
+function clientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+}
 
 export interface ImportedGame {
   source: 'lichess';
@@ -29,6 +34,11 @@ const SPEED_RU: Record<string, string> = {
 };
 
 export async function GET(req: NextRequest) {
+  // Не более 20 импортов за 5 минут с одного IP — защита внешнего API от абуза.
+  if (!rateLimit(`import-lichess:${clientIp(req)}`, 20, 5 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Слишком много запросов. Попробуйте позже.' }, { status: 429 });
+  }
+
   const username = req.nextUrl.searchParams.get('username')?.trim() ?? '';
   const max = Math.min(30, Math.max(1, parseInt(req.nextUrl.searchParams.get('max') ?? '15', 10) || 15));
 

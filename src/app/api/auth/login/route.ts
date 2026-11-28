@@ -14,6 +14,11 @@ const schema = z.object({
   password: z.string().min(1, 'Введите пароль'),
 });
 
+// Валидный bcrypt-хеш-заглушка: используется, чтобы проверка пароля для
+// несуществующего email занимала столько же времени, как и для существующего
+// (иначе по времени ответа можно перебирать зарегистрированные адреса).
+const DUMMY_HASH = '$2b$12$K3J8m0dQ5oQ9Yq0gZ1xW9uJ5H2k4y7lP8sN6rT1vB3cD5eF7gH9iK';
+
 function clientIp(req: NextRequest): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
 }
@@ -39,8 +44,11 @@ export async function POST(req: NextRequest) {
 
   const db = getDb();
   const user = await db.user.findUnique({ where: { email } });
-  // Единый ответ для "нет такого юзера" и "неверный пароль", чтобы не светить существование аккаунта.
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  // Всегда выполняем bcrypt-проверку: для отсутствующего пользователя — по
+  // заглушке, чтобы время ответа не выдавало существование аккаунта.
+  // Единый ответ для "нет такого юзера" и "неверный пароль".
+  const passwordOk = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
+  if (!user || !passwordOk) {
     return NextResponse.json({ error: 'Неверный email или пароль' }, { status: 401 });
   }
 
