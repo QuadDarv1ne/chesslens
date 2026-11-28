@@ -1,9 +1,9 @@
 'use client';
 
 // Личный кабинет.
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { CreditCard, CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,35 +34,35 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<'processing' | 'success' | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const ordersRes = await fetch('/api/payments/orders');
-        if (!cancelled && ordersRes.ok) {
-          const data = await ordersRes.json();
-          setOrders(data.orders ?? []);
-        }
-      } catch {
-        // ignore
-      } finally {
-        if (!cancelled) setLoading(false);
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const ordersRes = await fetch('/api/payments/orders');
+      if (ordersRes.ok) {
+        const data = await ordersRes.json();
+        setOrders(data.orders ?? []);
       }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
     }
-    load();
-    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    // Читаем ?payment=processing без useSearchParams (не требует Suspense boundary).
+    loadOrders();
+  }, [loadOrders]);
+
+  useEffect(() => {
+    // Читаем ?payment=... без useSearchParams (не требует Suspense boundary).
     const p = new URLSearchParams(window.location.search).get('payment');
-    if (p === 'processing') {
-      setPaymentStatus('processing');
-      refresh();
-      const t = setTimeout(() => setPaymentStatus(null), 10000);
-      return () => clearTimeout(t);
-    }
-  }, [refresh]);
+    if (!p) return;
+    setPaymentStatus(p === 'success' ? 'success' : 'processing');
+    refresh();
+    loadOrders();
+    const t = setTimeout(() => setPaymentStatus(null), 10000);
+    return () => clearTimeout(t);
+  }, [refresh, loadOrders]);
 
   const isPro = subscription?.plan === 'pro' && subscription?.status === 'active';
 
@@ -183,7 +183,7 @@ export default function DashboardPage() {
               <span className="font-medium">{formatDate(subscription?.expiresAt ?? null)}</span>
             </div>
             <Button className="w-full" variant={isPro ? 'outline' : 'default'} onClick={() => router.push('/pricing')}>
-              {isPro ? 'На тариф Pro' : 'На тариф Pro'}
+              {isPro ? 'Продлить Pro' : 'Перейти на Pro'}
             </Button>
           </CardContent>
         </Card>
@@ -195,8 +195,14 @@ export default function DashboardPage() {
               <CardTitle>История платежей</CardTitle>
               <CardDescription>Все ваши транзакции</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => router.refresh()} title="Обновить">
-              <RefreshCw className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { loadOrders(); refresh(); }}
+              title="Обновить"
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </CardHeader>
           <CardContent>
