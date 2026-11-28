@@ -45,6 +45,7 @@ const TABLES = [
     "userId" TEXT NOT NULL,
     "provider" TEXT NOT NULL,
     "plan" TEXT NOT NULL,
+    "tariffId" TEXT,
     "amount" INTEGER NOT NULL,
     "currency" TEXT NOT NULL DEFAULT 'RUB',
     "status" TEXT NOT NULL DEFAULT 'pending',
@@ -61,11 +62,25 @@ const TABLES = [
   `CREATE INDEX IF NOT EXISTS "PaymentOrder_externalId_idx" ON "PaymentOrder"("externalId")`,
 ];
 
+// Миграции для уже существующих баз: ALTER TABLE ADD COLUMN.
+// SQLite не поддерживает "ADD COLUMN IF NOT EXISTS", поэтому дубликаты
+// колонок ловим и игнорируем.
+const MIGRATIONS = [
+  `ALTER TABLE "PaymentOrder" ADD COLUMN "tariffId" TEXT`,
+];
+
 async function main() {
   const prisma = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
   try {
     for (const sql of TABLES) {
       await prisma.$executeRawUnsafe(sql);
+    }
+    for (const sql of MIGRATIONS) {
+      try {
+        await prisma.$executeRawUnsafe(sql);
+      } catch {
+        // Колонка уже существует — это ожидаемо.
+      }
     }
     console.log('[init-db] схема SQLite готова');
   } catch (err) {
