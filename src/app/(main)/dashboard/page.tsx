@@ -2,7 +2,7 @@
 
 // Личный кабинет.
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { CreditCard, CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,8 +29,7 @@ function getTariffName(tariffId: string | null): string {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user, subscription, refresh } = useUserState();
+  const { user, subscription, loaded, refresh } = useUserState();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<'processing' | 'success' | null>(null);
@@ -55,14 +54,15 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const p = searchParams.get('payment');
+    // Читаем ?payment=processing без useSearchParams (не требует Suspense boundary).
+    const p = new URLSearchParams(window.location.search).get('payment');
     if (p === 'processing') {
       setPaymentStatus('processing');
       refresh();
       const t = setTimeout(() => setPaymentStatus(null), 10000);
       return () => clearTimeout(t);
     }
-  }, [searchParams, refresh]);
+  }, [refresh]);
 
   const isPro = subscription?.plan === 'pro' && subscription?.status === 'active';
 
@@ -89,6 +89,14 @@ export default function DashboardPage() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (!loaded) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (

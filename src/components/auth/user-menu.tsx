@@ -17,13 +17,21 @@ import {
 interface UserState {
   user: { id: string; email: string; name: string | null; role: string; createdAt: string } | null;
   subscription: { plan: string; status: string; expiresAt: string | null } | null;
+  /** true, когда данные о пользователе уже загружены (для отличия "не залогинен" от "ещё грузится"). */
+  loaded: boolean;
 }
 
 let cachedUser: UserState | null = null;
 let listeners: Set<() => void> = new Set();
 
 function getUserState(): UserState {
-  return cachedUser ?? { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null } };
+  return (
+    cachedUser ?? {
+      user: null,
+      subscription: { plan: 'free', status: 'active', expiresAt: null },
+      loaded: false,
+    }
+  );
 }
 
 export function useUserState() {
@@ -34,13 +42,13 @@ export function useUserState() {
       const res = await fetch('/api/auth/me');
       if (res.ok) {
         const data = await res.json();
-        cachedUser = data;
+        cachedUser = { ...data, loaded: true };
       } else {
-        cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null } };
+        cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
       }
       setState(getUserState());
     } catch {
-      cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null } };
+      cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
       setState(getUserState());
     }
   }, []);
@@ -53,10 +61,10 @@ export function useUserState() {
       try {
         const res = await fetch('/api/auth/me');
         cachedUser = res.ok
-          ? await res.json()
-          : { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null } };
+          ? { ...(await res.json()), loaded: true }
+          : { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
       } catch {
-        cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null } };
+        cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
       }
       if (active) setState(getUserState());
     })();
@@ -80,7 +88,7 @@ function UserAvatar({ name, email }: { name: string | null; email: string }) {
 
 export function UserMenu() {
   const router = useRouter();
-  const { user, subscription, refresh } = useUserState();
+  const { user, subscription, loaded, refresh } = useUserState();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -93,6 +101,11 @@ export function UserMenu() {
     refresh();
     router.push('/');
   };
+
+  // Пока данные не загружены — держим заглушку того же размера, чтобы шапка не прыгала.
+  if (!loaded) {
+    return <div className="h-8 w-8 animate-pulse rounded-full bg-muted" aria-hidden />;
+  }
 
   if (!user) {
     return (
