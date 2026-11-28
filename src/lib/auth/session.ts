@@ -57,6 +57,10 @@ export async function createSession(userId: string): Promise<string> {
   const token = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
   const db = getDb();
+  // Чистим протухшие сессии этого пользователя, чтобы таблица не росла.
+  await db.session
+    .deleteMany({ where: { userId, expiresAt: { lt: new Date() } } })
+    .catch(() => undefined);
   await db.session.create({ data: { token, userId, expiresAt } });
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {

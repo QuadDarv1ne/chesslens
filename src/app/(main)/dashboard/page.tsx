@@ -2,17 +2,19 @@
 
 // Личный кабинет.
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { CreditCard, CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { CreditCard, CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useUserState } from '@/components/auth/user-menu';
+import { TARIFFS } from '@/lib/payments/tariffs';
 
 interface Order {
   id: string;
   provider: string;
   plan: string;
+  tariffId: string | null;
   amount: number;
   currency: string;
   status: string;
@@ -20,11 +22,18 @@ interface Order {
   createdAt: string;
 }
 
+function getTariffName(tariffId: string | null): string {
+  if (!tariffId) return 'Pro';
+  return TARIFFS.find((t) => t.id === tariffId)?.name ?? tariffId;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, subscription } = useUserState();
+  const searchParams = useSearchParams();
+  const { user, subscription, refresh } = useUserState();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paymentStatus, setPaymentStatus] = useState<'processing' | 'success' | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +53,16 @@ export default function DashboardPage() {
     load();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    const p = searchParams.get('payment');
+    if (p === 'processing') {
+      setPaymentStatus('processing');
+      refresh();
+      const t = setTimeout(() => setPaymentStatus(null), 10000);
+      return () => clearTimeout(t);
+    }
+  }, [searchParams, refresh]);
 
   const isPro = subscription?.plan === 'pro' && subscription?.status === 'active';
 
@@ -94,6 +113,21 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold">Личный кабинет</h1>
       </div>
 
+      {/* Статус оплаты */}
+      {paymentStatus === 'processing' && (
+        <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-center gap-2 text-amber-700">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Оплата обрабатывается. Обновляем данные...</span>
+        </div>
+      )}
+
+      {paymentStatus === 'success' && (
+        <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 flex items-center gap-2 text-emerald-700">
+          <CheckCircle className="h-4 w-4" />
+          <span className="text-sm">Оплата успешно проведена!</span>
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         {/* Профиль */}
         <Card>
@@ -141,16 +175,21 @@ export default function DashboardPage() {
               <span className="font-medium">{formatDate(subscription?.expiresAt ?? null)}</span>
             </div>
             <Button className="w-full" variant={isPro ? 'outline' : 'default'} onClick={() => router.push('/pricing')}>
-              {isPro ? 'Управление' : 'На тариф Pro'}
+              {isPro ? 'На тариф Pro' : 'На тариф Pro'}
             </Button>
           </CardContent>
         </Card>
 
         {/* История платежей */}
         <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>История платежей</CardTitle>
-            <CardDescription>Все ваши транзакции</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>История платежей</CardTitle>
+              <CardDescription>Все ваши транзакции</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => router.refresh()} title="Обновить">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -180,9 +219,9 @@ export default function DashboardPage() {
                     {orders.map((order) => (
                       <tr key={order.id} className="border-b last:border-0">
                         <td className="py-3">{formatDate(order.createdAt)}</td>
-                        <td className="py-3">{order.plan}</td>
+                        <td className="py-3">{getTariffName(order.tariffId)}</td>
                         <td className="py-3">{formatPrice(order.amount)}</td>
-                        <td className="py-3 capitalize">{order.provider}</td>
+                        <td className="py-3 capitalize">{order.provider === 'ozonpay' ? 'Ozon Pay' : order.provider}</td>
                         <td className="py-3">{statusBadge(order.status)}</td>
                       </tr>
                     ))}

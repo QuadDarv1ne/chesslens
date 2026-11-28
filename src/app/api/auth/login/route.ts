@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { getDb } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,16 @@ const schema = z.object({
   password: z.string().min(1, 'Введите пароль'),
 });
 
+function clientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+}
+
 export async function POST(req: NextRequest) {
+  // Защита от брутфорса: не более 10 попыток входа за 5 минут с одного IP.
+  if (!rateLimit(`login:${clientIp(req)}`, 10, 5 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Слишком много попыток. Попробуйте позже.' }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();

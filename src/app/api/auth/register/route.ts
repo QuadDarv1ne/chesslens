@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { getDb } from '@/lib/db';
 import { hashPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,16 @@ const schema = z.object({
   name: z.string().trim().min(1).max(60).optional(),
 });
 
+function clientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+}
+
 export async function POST(req: NextRequest) {
+  // Защита от спама регистраций: не более 5 регистраций за 10 минут с одного IP.
+  if (!rateLimit(`register:${clientIp(req)}`, 5, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Слишком много попыток. Попробуйте позже.' }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();

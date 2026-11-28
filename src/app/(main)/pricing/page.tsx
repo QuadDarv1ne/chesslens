@@ -3,21 +3,32 @@
 // Страница тарифов.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Crown, Loader2, ArrowLeft } from 'lucide-react';
+import { Check, Crown, Loader2, ArrowLeft, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TARIFFS } from '@/lib/payments/tariffs';
 import { useUserState } from '@/components/auth/user-menu';
 
+type Provider = 'mock' | 'yookassa' | 'tbank' | 'sbp' | 'ozonpay';
+
+const PROVIDERS: { id: Provider; label: string }[] = [
+  { id: 'mock', label: 'Демо-оплата' },
+  { id: 'sbp', label: 'СБП' },
+  { id: 'tbank', label: 'Т-Банк' },
+  { id: 'ozonpay', label: 'Ozon Pay' },
+  { id: 'yookassa', label: 'ЮKassa' },
+];
+
 export default function PricingPage() {
   const router = useRouter();
   const { user } = useUserState();
+  const [provider, setProvider] = useState<Provider>('mock');
   const [loading, setLoading] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  const handlePay = async (tariffId: string, provider: 'mock' | 'yookassa' | 'tbank' | 'sbp' | 'ozonpay') => {
+  const handlePay = async (tariffId: string) => {
     if (!user) {
       router.push('/login');
       return;
@@ -42,7 +53,7 @@ export default function PricingPage() {
       } else if (data.activated) {
         // Mock-режим: оплата имитируется мгновенно, подписка активирована.
         const tariff = TARIFFS.find((t) => t.id === tariffId);
-        setSuccess(`Тариф "${tariff?.name ?? tariffId}" активирован (mock-режим)`);
+        setSuccess(`Тариф "${tariff?.name ?? tariffId}" активирован (демо-режим)`);
         router.refresh();
       } else {
         setError('URL оплаты не получен');
@@ -65,6 +76,25 @@ export default function PricingPage() {
         <p className="text-muted-foreground">
           Выберите план, который подходит именно вам
         </p>
+      </div>
+
+      {/* Выбор способа оплаты */}
+      <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
+        <span className="text-sm text-muted-foreground">Способ оплаты:</span>
+        {PROVIDERS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setProvider(p.id)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              provider === p.id
+                ? 'border-emerald-600 bg-emerald-600 text-white'
+                : 'border-border bg-panel text-foreground/80 hover:bg-accent'
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
       <div className="grid gap-6 sm:grid-cols-3">
@@ -99,7 +129,7 @@ export default function PricingPage() {
               </ul>
               <Button
                 className="w-full"
-                onClick={() => handlePay(tariff.id, 'mock')}
+                onClick={() => handlePay(tariff.id)}
                 disabled={loading === tariff.id}
               >
                 {loading === tariff.id ? (
@@ -108,7 +138,10 @@ export default function PricingPage() {
                     Обработка...
                   </>
                 ) : (
-                  'Выбрать'
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Оплатить
+                  </>
                 )}
               </Button>
             </CardContent>

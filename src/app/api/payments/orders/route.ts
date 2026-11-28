@@ -22,6 +22,7 @@ export async function GET() {
       id: o.id,
       provider: o.provider,
       plan: o.plan,
+      tariffId: o.tariffId,
       amount: o.amount,
       currency: o.currency,
       status: o.status,
