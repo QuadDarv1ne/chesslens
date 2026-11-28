@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 
     const archives = archivesData.archives ?? [];
     if (archives.length === 0) {
-      return NextResponse.json({ error: `Пользователь «${username}» на chess.com не найден` }, { status: 404 });
+      return NextResponse.json({ error: `Пользователь "${username}" на chess.com не найден` }, { status: 404 });
     }
 
     // Собираем игры из последних 2 архивов (обычно это 1-2 месяца).
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
     cacheSet(cacheKey, result, 5 * 60 * 1000);
     return NextResponse.json({ games: result });
   } catch (e) {
-    const msg = e instanceof Error && e.message === '404' ? `Пользователь «${username}» на chess.com не найден` : 'Не удалось связаться с chess.com';
+    const msg = e instanceof Error && e.message === '404' ? `Пользователь "${username}" на chess.com не найден` : 'Не удалось связаться с chess.com';
     return NextResponse.json({ error: msg }, { status: 502 });
   }
 }

@@ -138,7 +138,7 @@ export function formatPawns(cpLoss: number | null): string {
 const PIECE_VALUE: Record<string, number> = { p: 100, n: 300, b: 320, r: 500, q: 900, k: 0 };
 
 /**
- * Грубая оценка того, сколько материала сможет «сожрать» соперник сразу после
+ * Грубая оценка того, сколько материала сможет "сожрать" соперник сразу после
  * хода (с учётом лучшего ответного взятия). Возвращает потерю в сантипешках.
  */
 export function sacrificeSeverity(afterFen: string): number {

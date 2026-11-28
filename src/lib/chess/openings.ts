@@ -32,7 +32,7 @@ export const OPENINGS: OpeningEntry[] = [
   { name: 'Гамбит Смитта-Морра', moves: 'e4 c5 d4 cxd4 c3' },
   { name: 'Сицилианская защита, вариант Найдорфа', moves: 'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6' },
   { name: 'Сицилианская защита, атака 6.Bg5 (Найдорф)', moves: 'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5' },
-  { name: 'Сицилианская защита, «Дракон»', moves: 'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6' },
+  { name: 'Сицилианская защита, "Дракон"', moves: 'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6' },
   { name: 'Сицилианская защита, схема Схевенинген', moves: 'e4 c5 Nf3 e6 d4 cxd4 Nxd4 Nc6 Nc3 Qc7' },
   { name: 'Скандинавская защита', moves: 'e4 d5 exd5 Qxd5' },
   { name: 'Скандинавская защита, вариант Портиша-Сэма', moves: 'e4 d5 exd5 Nf6' },

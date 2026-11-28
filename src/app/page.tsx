@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Crown, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { UserMenu } from '@/components/auth/user-menu';
 import { AnalysisBoard } from '@/components/chess/AnalysisBoard';
 import { MoveList } from '@/components/chess/MoveList';
 import { EvalGraph } from '@/components/chess/EvalGraph';
@@ -84,6 +85,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-1.5">
             <ThemeToggle />
+            <UserMenu />
             <Button className="h-9 bg-emerald-600 text-white hover:bg-emerald-500" onClick={() => setImportOpen(true)}>
               <Upload className="mr-1.5 h-4 w-4" />
               Загрузить партию

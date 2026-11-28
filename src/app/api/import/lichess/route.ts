@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (res.status === 404) {
-      return NextResponse.json({ error: `Пользователь «${username}» на lichess не найден` }, { status: 404 });
+      return NextResponse.json({ error: `Пользователь "${username}" на lichess не найден` }, { status: 404 });
     }
     if (!res.ok) {
       return NextResponse.json({ error: `lichess вернул ошибку ${res.status}` }, { status: 502 });

@@ -12,6 +12,8 @@
 - **Точность игроков** — процент точности, потерянные центипawns, статистика по категориям ходов.
 - **Острота позиции** — оценка критичности момента (насколько ошибка меняла исход).
 - **Engine-панель** — лучший ход, оценка, глубина, варианты в реальном времени.
+- **Аккаунты** — регистрация и вход по email/паролю, сессии в БД, личный кабинет.
+- **Подписка Pro** — тарифы на месяц/квартал/год, оплата через ЮKassa, Т-Банк, СБП или mock-режим, история платежей.
 
 ## Стек
 
@@ -19,14 +21,31 @@
 - **Tailwind CSS 4** + shadcn/ui
 - **chess.js** — правила, генерация ходов; **react-chessboard** — доска
 - **Stockfish 19** в WebAssembly (`public/engine/`) — работает в браузере
-- **Prisma + SQLite** — база подключена, но анализу не требуется
+- **Prisma + SQLite** — аккаунты, сессии, подписки и платежи
+- **bcryptjs** — хеширование паролей
 - **Bun** — локальная разработка и сборка Docker-образа
+
+## Аккаунты и оплата
+
+Регистрация и вход работают из коробки: сессия хранится в HTTP-only cookie, пользователь — в SQLite.
+
+Тарифы и платежи настраиваются переменными окружения (см. `.env.example`):
+
+| Переменная | Назначение |
+| --- | --- |
+| `PAYMENT_PROVIDER` | Провайдер по умолчанию: `yookassa`, `tbank`, `sbp` или `mock` |
+| `YOOKASSA_SHOP_ID`, `YOOKASSA_API_KEY` | ЮKassa (магазин и API-ключ) |
+| `TBANK_TOKEN`, `TBANK_MERCHANT_INN` | Т-Банк / СБП |
+| `NEXT_PUBLIC_BASE_URL` | Базовый URL для редиректа после оплаты |
+
+В режиме разработки (`NODE_ENV !== 'production'`) по умолчанию используется **mock**-провайдер — оплата имитируется, подписка активируется без реальных списаний. Вебхуки провайдеров принимает `POST /api/payments/webhook`.
 
 ## Локальный запуск
 
 ```bash
 bun install
-bun run dev      # http://localhost:3000
+bun run db:push   # применить схему Prisma к SQLite
+bun run dev       # http://localhost:3000
 ```
 
 Продакшен-сборка:
@@ -66,12 +85,32 @@ bun run test               # тесты классификации ходов
 src/
   app/
     page.tsx                  # главная страница анализатора
-    api/health/route.ts       # healthcheck для платформ деплоя
-    api/import/lichess/       # прокси к API lichess.org
-    api/import/chesscom/      # прокси к API chess.com
-  components/chess/           # доска, список ходов, график, панели
-  lib/chess/                  # разбор PGN, классификация ходов, дебюты
-  lib/engine/                 # обёртка над Stockfish WASM (Web Worker)
-  lib/store.ts                # zustand-хранилище анализа
+    (auth)/                   # маршруты авторизации
+      login/page.tsx          # вход
+      register/page.tsx       # регистрация
+    (main)/                   # защищённые маршруты
+      dashboard/page.tsx      # личный кабинет
+      pricing/page.tsx        # тарифы и оплата
+    api/
+      auth/                   # register, login, logout, me
+      payments/
+        create/route.ts       # создание платежа
+        orders/route.ts       # история платежей
+        subscription/route.ts # статус подписки
+        webhook/route.ts      # webhook от провайдеров
+      health/route.ts         # healthcheck для платформ деплоя
+      import/lichess/         # прокси к API lichess.org
+      import/chesscom/        # прокси к API chess.com
+  components/
+    auth/user-menu.tsx        # меню пользователя в шапке
+    chess/                    # доска, список ходов, график, панели
+    ui/                       # shadcn/ui компоненты
+  lib/
+    auth/session.ts           # сессии (cookie + БД)
+    auth/password.ts          # хеширование паролей
+    payments/                 # тарифы, провайдеры (ЮKassa, Т-Банк, СБП, mock)
+    chess/                    # разбор PGN, классификация ходов, дебюты
+    engine/                   # обёртка над Stockfish WASM (Web Worker)
+    store.ts                  # zustand-хранилище анализа
 public/engine/                # stockfish.js + stockfish.wasm
 ```

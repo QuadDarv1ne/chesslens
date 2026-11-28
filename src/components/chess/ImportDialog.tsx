@@ -88,7 +88,7 @@ async function readJson(res: Response): Promise<{ error?: string; games?: Import
 async function fetchChesscomDirect(username: string, max: number): Promise<ImportedGame[]> {
   const u = username.toLowerCase();
   const archRes = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(u)}/games/archives`);
-  if (!archRes.ok) throw new Error(`Пользователь «${username}» на chess.com не найден`);
+  if (!archRes.ok) throw new Error(`Пользователь "${username}" на chess.com не найден`);
   const archData = (await archRes.json()) as { archives?: string[] };
   const archives = archData.archives ?? [];
   const games: ImportedGame[] = [];
