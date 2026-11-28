@@ -22,57 +22,64 @@ interface UserState {
 }
 
 let cachedUser: UserState | null = null;
-let listeners: Set<() => void> = new Set();
+/** Подписчики на обновления пользователя — все смонтированные useUserState. */
+const subscribers = new Set<(s: UserState) => void>();
+/** Текущий запрос /api/auth/me, чтобы несколько компонентов не дублировали его. */
+let inflight: Promise<UserState> | null = null;
+
+const EMPTY_STATE: UserState = {
+  user: null,
+  subscription: { plan: 'free', status: 'active', expiresAt: null },
+  loaded: false,
+};
 
 function getUserState(): UserState {
-  return (
-    cachedUser ?? {
-      user: null,
-      subscription: { plan: 'free', status: 'active', expiresAt: null },
-      loaded: false,
+  return cachedUser ?? EMPTY_STATE;
+}
+
+function setCachedUser(next: UserState): void {
+  cachedUser = next;
+  for (const fn of subscribers) fn(next);
+}
+
+async function fetchUser(): Promise<UserState> {
+  try {
+    const res = await fetch('/api/auth/me');
+    if (res.ok) {
+      const data = await res.json();
+      return { ...data, loaded: true };
     }
-  );
+  } catch {
+    // сеть недоступна — считаем неавторизованным
+  }
+  return { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
+}
+
+/** Загружает пользователя один раз, деля запрос между всеми подписчиками. */
+function ensureLoaded(): Promise<UserState> {
+  if (!inflight) {
+    inflight = fetchUser().finally(() => {
+      inflight = null;
+    });
+  }
+  return inflight;
 }
 
 export function useUserState() {
   const [state, setState] = useState<UserState>(getUserState);
 
   const refresh = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      if (res.ok) {
-        const data = await res.json();
-        cachedUser = { ...data, loaded: true };
-      } else {
-        cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
-      }
-      setState(getUserState());
-    } catch {
-      cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
-      setState(getUserState());
-    }
+    setCachedUser(await ensureLoaded());
   }, []);
 
   useEffect(() => {
-    listeners.add(refresh);
-    let active = true;
-    // Загружаем пользователя при первом рендере; setState — только после await.
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        cachedUser = res.ok
-          ? { ...(await res.json()), loaded: true }
-          : { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
-      } catch {
-        cachedUser = { user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true };
-      }
-      if (active) setState(getUserState());
-    })();
+    subscribers.add(setState);
+    // Начальное состояние уже взято из кэша; здесь только сверяемся с сервером.
+    ensureLoaded().then(setCachedUser);
     return () => {
-      active = false;
-      listeners.delete(refresh);
+      subscribers.delete(setState);
     };
-  }, [refresh]);
+  }, []);
 
   return { ...state, refresh };
 }
@@ -97,7 +104,8 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    cachedUser = null;
+    // Сбрасываем кэш, чтобы шапка сразу показала "Войти", затем сверяемся с сервером.
+    setCachedUser({ user: null, subscription: { plan: 'free', status: 'active', expiresAt: null }, loaded: true });
     refresh();
     router.push('/');
   };

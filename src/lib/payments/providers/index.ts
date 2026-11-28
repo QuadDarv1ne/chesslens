@@ -9,6 +9,36 @@ import { TBankProvider } from './tbank';
 import { SbpProvider } from './sbp';
 import { OzonPayProvider } from './ozonpay';
 
+/** Проверяет, можно ли использовать данный провайдер в текущем окружении. */
+export function isProviderAvailable(name: string): boolean {
+  switch (name) {
+    case 'mock':
+      return process.env.NODE_ENV !== 'production' || process.env.PAYMENT_PROVIDER === 'mock';
+    case 'yookassa':
+      return !!(process.env.YOOKASSA_SHOP_ID && process.env.YOOKASSA_API_KEY);
+    case 'tbank':
+      return !!process.env.TBANK_TOKEN;
+    case 'ozonpay':
+      return !!(process.env.OZON_PAY_CLIENT_ID && process.env.OZON_PAY_API_KEY);
+    case 'sbp':
+      // СБП работает только если настроен Т-Банк как бэкенд.
+      return !!process.env.TBANK_TOKEN;
+    default:
+      return false;
+  }
+}
+
+/** Список доступных провайдеров с метаданными для UI. */
+export function listAvailableProviders(): { id: string; label: string }[] {
+  return [
+    { id: 'mock', label: 'Демо-оплата' },
+    { id: 'sbp', label: 'СБП' },
+    { id: 'tbank', label: 'Т-Банк' },
+    { id: 'ozonpay', label: 'Ozon Pay' },
+    { id: 'yookassa', label: 'ЮKassa' },
+  ].filter((p) => isProviderAvailable(p.id));
+}
+
 export function getProvider(name: PaymentProvider['name'] = 'mock'): PaymentProvider {
   switch (name) {
     case 'yookassa':

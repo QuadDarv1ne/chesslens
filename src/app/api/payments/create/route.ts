@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth/session';
 import { findTariff, DEFAULT_TARIFF_ID } from '@/lib/payments/tariffs';
-import { getProvider } from '@/lib/payments/providers';
+import { getProvider, isProviderAvailable } from '@/lib/payments/providers';
 import { activateProSubscription } from '@/lib/payments/activate';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +34,12 @@ export async function POST(req: NextRequest) {
   const db = getDb();
   const tariffId = parsed.data.tariffId ?? DEFAULT_TARIFF_ID;
   const providerName = (parsed.data.provider ?? 'mock') as 'yookassa' | 'tbank' | 'sbp' | 'ozonpay' | 'mock';
+
+  // Нельзя использовать провайдер, который не настроен в этом окружении.
+  // Это защищает от бесплатной активации Pro через mock на боевом сервере.
+  if (!isProviderAvailable(providerName)) {
+    return NextResponse.json({ error: 'Этот способ оплаты недоступен' }, { status: 400 });
+  }
 
   const tariff = findTariff(tariffId);
   if (!tariff) {

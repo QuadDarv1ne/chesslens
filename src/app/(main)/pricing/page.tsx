@@ -1,7 +1,7 @@
 'use client';
 
 // Страница тарифов.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Crown, Loader2, ArrowLeft, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,27 +10,41 @@ import { Badge } from '@/components/ui/badge';
 import { TARIFFS } from '@/lib/payments/tariffs';
 import { useUserState } from '@/components/auth/user-menu';
 
-type Provider = 'mock' | 'yookassa' | 'tbank' | 'sbp' | 'ozonpay';
-
-const PROVIDERS: { id: Provider; label: string }[] = [
-  { id: 'mock', label: 'Демо-оплата' },
-  { id: 'sbp', label: 'СБП' },
-  { id: 'tbank', label: 'Т-Банк' },
-  { id: 'ozonpay', label: 'Ozon Pay' },
-  { id: 'yookassa', label: 'ЮKassa' },
-];
+interface ProviderOption {
+  id: string;
+  label: string;
+}
 
 export default function PricingPage() {
   const router = useRouter();
-  const { user } = useUserState();
-  const [provider, setProvider] = useState<Provider>('mock');
+  const { user, loaded, refresh } = useUserState();
+  const [providers, setProviders] = useState<ProviderOption[]>([]);
+  const [provider, setProvider] = useState<string | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/payments/providers')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.providers?.length) return;
+        setProviders(data.providers);
+        setProvider((prev) => prev ?? data.default ?? data.providers[0].id);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
+
   const handlePay = async (tariffId: string) => {
+    if (!loaded) return;
     if (!user) {
       router.push('/login');
+      return;
+    }
+    if (!provider) {
+      setError('Не удалось определить способ оплаты');
       return;
     }
     setLoading(tariffId);
@@ -43,7 +57,7 @@ export default function PricingPage() {
         body: JSON.stringify({ tariffId, provider }),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         setError(data.error ?? 'Ошибка создания платежа');
         return;
       }
@@ -54,7 +68,7 @@ export default function PricingPage() {
         // Mock-режим: оплата имитируется мгновенно, подписка активирована.
         const tariff = TARIFFS.find((t) => t.id === tariffId);
         setSuccess(`Тариф "${tariff?.name ?? tariffId}" активирован (демо-режим)`);
-        router.refresh();
+        refresh();
       } else {
         setError('URL оплаты не получен');
       }
@@ -79,23 +93,25 @@ export default function PricingPage() {
       </div>
 
       {/* Выбор способа оплаты */}
-      <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-        <span className="text-sm text-muted-foreground">Способ оплаты:</span>
-        {PROVIDERS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => setProvider(p.id)}
-            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-              provider === p.id
-                ? 'border-emerald-600 bg-emerald-600 text-white'
-                : 'border-border bg-panel text-foreground/80 hover:bg-accent'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      {providers.length > 0 && (
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
+          <span className="text-sm text-muted-foreground">Способ оплаты:</span>
+          {providers.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setProvider(p.id)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                provider === p.id
+                  ? 'border-emerald-600 bg-emerald-600 text-white'
+                  : 'border-border bg-panel text-foreground/80 hover:bg-accent'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-6 sm:grid-cols-3">
         {TARIFFS.map((tariff) => (
@@ -130,7 +146,7 @@ export default function PricingPage() {
               <Button
                 className="w-full"
                 onClick={() => handlePay(tariff.id)}
-                disabled={loading === tariff.id}
+                disabled={loading === tariff.id || !loaded}
               >
                 {loading === tariff.id ? (
                   <>
@@ -161,7 +177,7 @@ export default function PricingPage() {
         </div>
       )}
 
-      {!user && (
+      {loaded && !user && (
         <div className="mt-8 text-center">
           <p className="mb-2 text-sm text-muted-foreground">Нужен аккаунт?</p>
           <Button variant="outline" onClick={() => router.push('/login')}>

@@ -90,7 +90,7 @@ export function AnalysisBoard() {
   const flip = useAnalysisStore((s) => s.flip);
   const addMove = useAnalysisStore((s) => s.addMove);
 
-  const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string } | null>(null);
+  const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string; ply: number } | null>(null);
   // Выделение привязано к номеру позиции: при смене хода оно автоматически сбрасывается,
   // без setState в эффекте (подсветка не «залипает» на прошлом ходе).
   const [selection, setSelection] = useState<{ square: string; ply: number } | null>(null);
@@ -182,7 +182,7 @@ export function AnalysisBoard() {
     if (isPawn && toLastRank) {
       try {
         probe.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-        setPendingPromotion({ from: sourceSquare, to: targetSquare });
+        setPendingPromotion({ from: sourceSquare, to: targetSquare, ply: currentPly });
         return true;
       } catch {
         return false;
@@ -286,8 +286,8 @@ export function AnalysisBoard() {
             />
           </div>
 
-          {/* Диалог превращения */}
-          {pendingPromotion ? (
+          {/* Диалог превращения (только для текущей позиции) */}
+          {pendingPromotion && pendingPromotion.ply === currentPly ? (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70">
               <div className="rounded-lg border border-border bg-panel-input p-3 shadow-xl">
                 <div className="mb-2 flex items-center justify-between gap-4">
