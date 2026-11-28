@@ -5,7 +5,7 @@
 #   fly deploy
 # Полная инструкция — в DEPLOY.md.
 
-app = "chesslens-maksi"
+app = "chesslens-ru"
 primary_region = "ams"
 
 [build]
@@ -14,11 +14,9 @@ primary_region = "ams"
 [env]
   NODE_ENV = "production"
   PORT = "3000"
-  # БД сейчас не используется (анализ идёт в браузере). Если позже
-  # понадобится SQLite — создайте том и задайте DATABASE_URL секретом:
-  #   fly volumes create chesslens_data --size 1 --region ams
-  #   fly secrets set DATABASE_URL=file:/data/chesslens.db
-  # и раскомментируйте секцию [mounts] ниже.
+  # SQLite с авторизацией и платежами живёт на постоянном томе /data.
+  # Том создаётся командой: fly volumes create chesslens_data --size 1 --region ams
+  DATABASE_URL = "file:/data/chesslens.db"
 
 [http_service]
   internal_port = 3000
@@ -43,11 +41,10 @@ primary_region = "ams"
     method = "GET"
     path = "/api/health"
 
-# Опционально: постоянный том для SQLite (раскомментируйте после
-# `fly volumes create chesslens_data --size 1 --region ams`).
-# [mounts]
-#   source = "chesslens_data"
-#   destination = "/data"
+# Постоянный том для SQLite (аккаунты, сессии, подписки, платежи).
+[mounts]
+  source = "chesslens_data"
+  destination = "/data"
 
 [[vm]]
   size = "shared-cpu-1x"

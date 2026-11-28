@@ -51,6 +51,11 @@ COPY --from=builder --chown=node:node /app/.next/standalone ./
 # в node_modules рядом с server.js.
 COPY --from=builder --chown=node:node /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=node:node /app/node_modules/@prisma ./node_modules/@prisma
+# Prisma CLI для применения схемы при первом запуске
+COPY --from=builder --chown=node:node /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=node:node /app/prisma ./prisma
+# Скрипт инициализации схемы (без Prisma CLI)
+COPY scripts/init-db.js ./init-db.js
 
 USER node
 EXPOSE 3000
@@ -58,4 +63,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "server.js"]
+# Идемпотентно создаём таблицы SQLite (без Prisma CLI) и стартуем сервер.
+# Ошибка инициализации не блокирует запуск: сервер поднимется, а БД можно
+# досоздать позже.
+CMD ["sh", "-c", "node init-db.js || echo '[start] init-db failed, continuing'; exec node server.js"]
