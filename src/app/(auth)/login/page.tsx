@@ -7,6 +7,7 @@ import { Crown, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { invalidateUser } from '@/components/auth/user-menu';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,9 +27,10 @@ export default function LoginPage() {
         body: JSON.stringify({ email: email.trim(), password }),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         setError(data.error ?? 'Ошибка входа');
       } else {
+        invalidateUser();
         router.push('/dashboard');
         router.refresh();
       }

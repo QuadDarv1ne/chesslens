@@ -26,7 +26,7 @@ export interface ClassificationMeta {
 }
 
 export const CLASSIFICATION_META: Record<Classification, ClassificationMeta> = {
-  brilliant: { label: 'Триллиант', symbol: '!!', color: '#22d3ee', bg: 'rgba(34,211,238,0.15)' },
+  brilliant: { label: 'Бриллиант', symbol: '!!', color: '#22d3ee', bg: 'rgba(34,211,238,0.15)' },
   best: { label: 'Лучший ход', symbol: '★', color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
   excellent: { label: 'Отличный ход', symbol: '!', color: '#a3e635', bg: 'rgba(163,230,53,0.15)' },
   good: { label: 'Хороший ход', symbol: '✓', color: '#9aa4b2', bg: 'rgba(154,164,178,0.15)' },
@@ -211,7 +211,7 @@ function buildComment(args: {
     case 'miss':
       return `Упущенная победа! Был доступен форсированный мат в ${Math.max(1, Math.ceil(Math.abs(mateBeforeStm ?? 1) / 2))} ход(а).${bestPart}`;
     case 'brilliant':
-      return `Триллиант! Жертва материала (~${formatPawns(args.severity)} п.), которая сохраняет решающий перевес (после хода ${evalStr(evalAfter, mover)}). Движок подтверждает: это сильнейший ход в позиции.`;
+      return `Бриллиант! Жертва материала (~${formatPawns(args.severity)} п.), которая сохраняет решающий перевес (после хода ${evalStr(evalAfter, mover)}). Движок подтверждает: это сильнейший ход в позиции.`;
     case 'best':
       return `Лучший ход по оценке Stockfish 19. Оценка после хода: ${evalStr(evalAfter, mover)}.`;
     case 'excellent':
@@ -294,10 +294,12 @@ export function buildMoveMeta({ fens, sans, analyses, ply, opening }: BuildMetaA
   const mateBeforeStm = evalBefore.mate === null ? null : evalBefore.mate * sign;
   const mateAfterStm = evalAfter.mate === null ? null : evalAfter.mate * sign;
 
-  const severity = sacrificeSeverity(fens[ply]);
+  // Проверка жертвы дорогая (перебор ходов и создание Chess на каждый вариант),
+  // поэтому считаем её только для кандидата на «бриллиант».
   const inBook = !!opening && opening.prefixLen >= ply;
 
   let classification: Classification;
+  let severity = 0;
   if (inBook && winLoss < 5) {
     classification = 'book';
   } else if (legalCount === 1) {
@@ -308,12 +310,11 @@ export function buildMoveMeta({ fens, sans, analyses, ply, opening }: BuildMetaA
     classification = 'miss';
   } else if (playedIsBest && winLoss < 10) {
     // Сыгран ход, совпавший с лучшим ходом движка: независимо от шума оценок
-    // между соседними поисками это лучший ход (или триллиант при жертве).
-    if (severity >= 300 && winAfter >= 45 && cpAfter !== null && cpAfter >= -30) {
-      classification = 'brilliant';
-    } else {
-      classification = 'best';
+    // между соседними поисками это лучший ход (или бриллиант при жертве).
+    if (winAfter >= 45 && cpAfter !== null && cpAfter >= -30) {
+      severity = sacrificeSeverity(fens[ply]);
     }
+    classification = severity >= 300 ? 'brilliant' : 'best';
   } else if (winLoss >= 10) {
     classification = 'blunder';
   } else if (winLoss >= 5) {

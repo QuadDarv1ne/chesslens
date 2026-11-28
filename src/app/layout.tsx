@@ -9,15 +9,22 @@ const inter = Inter({
   subsets: ["latin", "cyrillic"],
 });
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://chesslens-ru.fly.dev';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
   title: "ChessLens — анализ шахматных партий",
   description:
-    "Разбор шахматных партий словами: Stockfish 19 в браузере, классификация ходов от триллианта до зевка, график оценки, точность игроков и острота позиций. Импорт PGN, партий с lichess и chess.com. Светлая, тёмная, синяя, изумрудная и сепия-темы.",
+    "Разбор шахматных партий словами: Stockfish 19 в браузере, классификация ходов от бриллианта до зевка, график оценки, точность игроков и острота позиций. Импорт PGN, партий с lichess и chess.com. Светлая, тёмная, синяя, изумрудная и сепия-темы.",
   keywords: ["шахматы", "анализ партии", "Stockfish", "PGN", "lichess", "chess.com", "разбор ходов", "темы оформления"],
+  alternates: { canonical: '/' },
   openGraph: {
     title: "ChessLens — анализ шахматных партий",
     description: "Движок в браузере, значки ходов, график оценки, точность игроков, пять тем оформления.",
     type: "website",
+    url: '/',
+    siteName: "ChessLens",
+    locale: "ru_RU",
   },
 };
 

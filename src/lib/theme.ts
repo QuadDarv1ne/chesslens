@@ -27,7 +27,7 @@ export function useIsNight(): boolean {
 
 /** Светлые варианты цветов классификаций ходов (читаемо на светлых темах). */
 const CLASSIFICATION_META_LIGHT: Record<Classification, ClassificationMeta> = {
-  brilliant: { label: 'Триллиант', symbol: '!!', color: '#0e7490', bg: 'rgba(14,116,144,0.12)' },
+  brilliant: { label: 'Бриллиант', symbol: '!!', color: '#0e7490', bg: 'rgba(14,116,144,0.12)' },
   best: { label: 'Лучший ход', symbol: '★', color: '#059669', bg: 'rgba(5,150,105,0.12)' },
   excellent: { label: 'Отличный ход', symbol: '!', color: '#4d7c0f', bg: 'rgba(77,124,15,0.12)' },
   good: { label: 'Хороший ход', symbol: '✓', color: '#64748b', bg: 'rgba(100,116,139,0.12)' },

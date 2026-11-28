@@ -1,21 +1,28 @@
 // Обработка вебхуков от платёжных провайдеров.
-// POST /api/payments/webhook
+// POST /api/payments/webhook?token=<PAYMENT_WEBHOOK_SECRET>
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { activateProSubscription } from '@/lib/payments/activate';
 import { getProvider } from '@/lib/payments/providers';
+import { verifyWebhookSecret } from '@/lib/payments/webhook';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Вебхук-обработчик:
- * 1. Парсит payload в externalId + confirmStatus.
- * 2. Ищет PaymentOrder по внешнему ID.
- * 3. Определяет провайдера из заказа (не из env).
- * 4. Подтверждает платёж у провайдера.
- * 5. Обновляет PaymentOrder и Subscription.
+ * 1. Проверяет секрет (иначе кто угодно мог бы «подтвердить» свой заказ).
+ * 2. Парсит payload в externalId + confirmStatus.
+ * 3. Ищет PaymentOrder по внешнему ID.
+ * 4. Определяет провайдера из заказа (не из env).
+ * 5. Подтверждает платёж у провайдера.
+ * 6. Обновляет PaymentOrder и Subscription.
  */
 export async function POST(req: NextRequest) {
+  const auth = verifyWebhookSecret(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -68,8 +75,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  // Mock-провайдер не отправляет вебхуков: он активирует подписку сразу
+  // при создании платежа. Разрешать ему подтверждение отсюда означало бы
+  // «бесплатный Pro» при любой утечке секрета вебхука.
+  if (order.provider === 'mock') {
+    return NextResponse.json({ error: 'Mock-платежи не подтверждаются через вебхук' }, { status: 403 });
+  }
+
   // Получаем провайдера из заказа (а не из env), чтобы корректно подтвердить.
-  const provider = getProvider(order.provider as 'yookassa' | 'tbank' | 'sbp' | 'ozonpay' | 'mock');
+  const provider = getProvider(order.provider as 'yookassa' | 'tbank' | 'sbp' | 'ozonpay');
 
   // Подтверждаем у провайдера.
   const result = await provider.confirm({

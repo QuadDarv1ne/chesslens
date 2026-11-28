@@ -330,51 +330,56 @@ export const useAnalysisStore = create<AnalysisStore>((set, get) => ({
     const { fens, currentPly, analyzing } = get();
     if (analyzing) return;
     const token = ++runToken;
+    const targetPly = currentPly;
     set({ analyzing: true, engineStatus: 'analyzing', progressTotal: 1, progressDone: 0 });
     (async () => {
       set({ engineStatus: 'loading' });
       try {
         await engine.ensureReady();
       } catch {
-        set({ analyzing: false, engineStatus: 'off', error: 'Не удалось загрузить движок Stockfish' });
+        if (token === runToken) {
+          set({ analyzing: false, engineStatus: 'off', error: 'Не удалось загрузить движок Stockfish' });
+        }
         return;
       }
       if (token !== runToken) return;
-      const synth = syntheticEval(fens[currentPly]);
+      const synth = syntheticEval(fens[targetPly]);
       let result: PlyEval;
       if (synth) {
         result = synth;
       } else {
         try {
-          const r = await engine.evalPosition(fens[currentPly], 18);
+          const r = await engine.evalPosition(fens[targetPly], 18);
           if (token !== runToken) return;
           result = {
             cp: r.cp,
             mate: r.mate,
             bestUci: r.bestUci,
             pvUci: r.pvUci,
-            pvSan: uciToSan(fens[currentPly], r.pvUci),
+            pvSan: uciToSan(fens[targetPly], r.pvUci),
             depth: r.depth,
             nodes: r.nodes,
             timeMs: r.timeMs,
           };
         } catch {
-          set({ analyzing: false, engineStatus: 'ready', error: 'Движок не ответил на запрос' });
+          if (token === runToken) {
+            set({ analyzing: false, engineStatus: 'ready', error: 'Движок не ответил на запрос' });
+          }
           return;
         }
       }
       if (token !== runToken) return;
       set((state) => {
         const next = state.analyses.slice();
-        next[currentPly] = result;
+        next[targetPly] = result;
         const nextMeta = state.moveMeta.slice();
-        if (currentPly >= 1 && next[currentPly - 1]) {
-          const meta = buildMoveMeta({ fens: state.fens, sans: state.sans, analyses: next, ply: currentPly, opening: state.opening ? { name: state.opening, prefixLen: state.openingPrefixLen } : null });
-          if (meta) nextMeta[currentPly - 1] = meta;
+        if (targetPly >= 1 && next[targetPly - 1]) {
+          const meta = buildMoveMeta({ fens: state.fens, sans: state.sans, analyses: next, ply: targetPly, opening: state.opening ? { name: state.opening, prefixLen: state.openingPrefixLen } : null });
+          if (meta) nextMeta[targetPly - 1] = meta;
         }
-        if (currentPly + 1 < next.length && next[currentPly + 1]) {
-          const meta = buildMoveMeta({ fens: state.fens, sans: state.sans, analyses: next, ply: currentPly + 1, opening: state.opening ? { name: state.opening, prefixLen: state.openingPrefixLen } : null });
-          if (meta) nextMeta[currentPly] = meta;
+        if (targetPly + 1 < next.length && next[targetPly + 1]) {
+          const meta = buildMoveMeta({ fens: state.fens, sans: state.sans, analyses: next, ply: targetPly + 1, opening: state.opening ? { name: state.opening, prefixLen: state.openingPrefixLen } : null });
+          if (meta) nextMeta[targetPly] = meta;
         }
         return { analyses: next, moveMeta: nextMeta };
       });

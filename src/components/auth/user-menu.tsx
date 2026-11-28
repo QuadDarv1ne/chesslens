@@ -65,8 +65,17 @@ function ensureLoaded(): Promise<UserState> {
   return inflight;
 }
 
-export function useUserState() {
-  const [state, setState] = useState<UserState>(getUserState);
+/** Сбрасывает кэш и перезагружает данные — нужен после входа/регистрации,
+ * чтобы шапка сразу показала актуальное состояние вместо «Войти». */
+export function invalidateUser(): void {
+  cachedUser = null;
+  inflight = null;
+  // Запускаем запрос сразу: даже если layout не перемонтируется,
+  // подписчики получат свежее состояние.
+  void ensureLoaded().then(setCachedUser);
+}
+
+export function useUserState() {  const [state, setState] = useState<UserState>(getUserState);
 
   const refresh = useCallback(async () => {
     setCachedUser(await ensureLoaded());
