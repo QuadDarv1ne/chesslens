@@ -45,14 +45,23 @@ class StockfishEngine {
     if (this.readyPromise) return this.readyPromise;
     this.readyPromise = new Promise<void>((resolve, reject) => {
       let settled = false;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
       const w = new Worker('/engine/stockfish.js');
       this.worker = w;
-      const timeout = setTimeout(() => {
-        if (!settled) {
-          settled = true;
-          reject(new Error('Движок не отвечает'));
+      // Освобождает воркер при неудачной инициализации, чтобы не держать поток/WASM.
+      const fail = (err: Error) => {
+        if (settled) return;
+        settled = true;
+        if (timeout) clearTimeout(timeout);
+        try {
+          w.terminate();
+        } catch {
+          // игнорируем ошибки terminate
         }
-      }, 30000);
+        if (this.worker === w) this.worker = null;
+        reject(err);
+      };
+      timeout = setTimeout(() => fail(new Error('Движок не отвечает')), 30000);
       w.onmessage = (e: MessageEvent) => {
         if (typeof e.data !== 'string') return;
         const line = e.data;
@@ -68,18 +77,11 @@ class StockfishEngine {
         }
         this.handleLine(line);
       };
-      w.onerror = () => {
-        if (!settled) {
-          settled = true;
-          clearTimeout(timeout);
-          reject(new Error('Не удалось загрузить движок'));
-        }
-      };
+      w.onerror = () => fail(new Error('Не удалось загрузить движок'));
       w.postMessage('uci');
     });
     this.readyPromise.catch(() => {
       this.readyPromise = null;
-      this.worker = null;
     });
     return this.readyPromise;
   }

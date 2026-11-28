@@ -284,10 +284,11 @@ export function buildMoveMeta({ fens, sans, analyses, ply, opening }: BuildMetaA
   const winAfter = evalToWin(evalAfter, mover);
   const winLoss = Math.max(0, winBefore - winAfter);
 
-  // Потеря в сантипешках (с точки зрения ходившего).
+  // Потеря в сантипешках (с точки зрения ходившего). Не бывает отрицательной:
+  // если ход улучшил позицию, потери нет.
   const cpBefore = evalBefore.cp === null ? null : evalBefore.cp * sign;
   const cpAfter = evalAfter.cp === null ? null : evalAfter.cp * sign;
-  const cpLoss = cpBefore !== null && cpAfter !== null ? cpBefore - cpAfter : null;
+  const cpLoss = cpBefore !== null && cpAfter !== null ? Math.max(0, cpBefore - cpAfter) : null;
 
   // Мат-статусы с точки зрения ходившего.
   const mateBeforeStm = evalBefore.mate === null ? null : evalBefore.mate * sign;
@@ -301,7 +302,9 @@ export function buildMoveMeta({ fens, sans, analyses, ply, opening }: BuildMetaA
     classification = 'book';
   } else if (legalCount === 1) {
     classification = 'forced';
-  } else if (mateBeforeStm !== null && mateBeforeStm > 0 && mateAfterStm !== null && mateAfterStm <= 0) {
+  } else if (mateBeforeStm !== null && mateBeforeStm > 0 && (mateAfterStm === null || mateAfterStm <= 0)) {
+    // Мат был в руках, но после хода исчез — даже если позиция стала просто
+    // выигранной без форсированного мата (mateAfterStm === null).
     classification = 'miss';
   } else if (playedIsBest && winLoss < 10) {
     // Сыгран ход, совпавший с лучшим ходом движка: независимо от шума оценок

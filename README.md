@@ -43,6 +43,7 @@ node .next/standalone/server.js
 ```bash
 bun run validate:chess
 bun run lint
+bun run test               # тесты классификации ходов
 ```
 
 > `build` использует `node scripts/copy-standalone.js` — работает на Windows/macOS/Linux без `cp`.

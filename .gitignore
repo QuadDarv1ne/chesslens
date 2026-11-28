@@ -54,3 +54,5 @@ server.log
 db/*.db
 # Skills directory
 /skills/
+# Тестовая сборка (scripts/test-analysis.js)
+/.test-build/
