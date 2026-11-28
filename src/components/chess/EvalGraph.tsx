@@ -131,8 +131,13 @@ export function EvalGraph() {
         }
         tabIndex={0}
         onKeyDown={(e) => {
+          if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+          // Останавливаем всплытие: иначе глобальный обработчик в page.tsx
+          // сработает следом и сдвинет позицию ещё на один ход.
+          e.preventDefault();
+          e.stopPropagation();
           if (e.key === 'ArrowLeft') goTo(Math.max(0, currentPly - 1));
-          if (e.key === 'ArrowRight') goTo(Math.min(fens.length - 1, currentPly + 1));
+          else goTo(Math.min(fens.length - 1, currentPly + 1));
         }}
       >
         {hasData ? (

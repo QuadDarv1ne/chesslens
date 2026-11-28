@@ -25,9 +25,13 @@ export default function Home() {
   const sampleLoaded = useRef(false);
 
   // Автозагрузка примера партии при первом открытии страницы.
+  // Только если партия ещё не загружена: иначе возврат с другой страницы
+  // затирал бы партию пользователя.
   useEffect(() => {
-    if (!sampleLoaded.current) {
-      sampleLoaded.current = true;
+    if (sampleLoaded.current) return;
+    sampleLoaded.current = true;
+    const { sans, fens } = useAnalysisStore.getState();
+    if (sans.length === 0 && fens.length <= 1) {
       loadFromPgn(SAMPLE_GAMES[0].pgn);
     }
   }, [loadFromPgn]);
@@ -43,8 +47,13 @@ export default function Home() {
   // Клавиатурная навигация по партии.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const tag = (document.activeElement?.tagName ?? '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      const el = document.activeElement as HTMLElement | null;
+      const tag = (el?.tagName ?? '').toLowerCase();
+      // Не перехватываем ввод в полях и редактируемых областях.
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || el?.isContentEditable) return;
+      // Если фокус на элементе со своей обработкой клавиш (например, график оценки),
+      // он сам обработает стрелки и остановит всплытие.
+      if (e.defaultPrevented) return;
       const store = useAnalysisStore.getState();
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
@@ -117,7 +126,7 @@ export default function Home() {
           <div className="rounded-xl border border-border bg-panel p-3.5">
             <p className="text-xs font-semibold text-foreground/90">Значки ходов</p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              !! — триллиант (жертва с перевесом), ★ — лучший ход, ! — отличный, ?! — неточность, ? — ошибка, ?? — зевок, M — упущенный мат.
+              !! — бриллиант (жертва с перевесом), ★ — лучший ход, ! — отличный, ?! — неточность, ? — ошибка, ?? — зевок, M — упущенный мат.
             </p>
           </div>
           <div className="rounded-xl border border-border bg-panel p-3.5">

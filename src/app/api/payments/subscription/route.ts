@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth/session';
+import { getEffectiveSubscription } from '@/lib/payments/activate';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,17 +12,14 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
 
   const db = getDb();
-  const sub = await db.subscription.findUnique({ where: { userId: user.id } });
+  const sub = await getEffectiveSubscription(db, user.id);
 
   return NextResponse.json({
-    subscription: sub
-      ? {
-          plan: sub.plan,
-          status: sub.status,
-          startsAt: sub.startsAt,
-          expiresAt: sub.expiresAt,
-          updatedAt: sub.updatedAt,
-        }
-      : { plan: 'free', status: 'active', startsAt: null, expiresAt: null, updatedAt: null },
+    subscription: {
+      plan: sub.plan,
+      status: sub.status,
+      startsAt: sub.startsAt,
+      expiresAt: sub.expiresAt,
+    },
   });
 }
