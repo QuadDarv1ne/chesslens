@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // sharp — необязательная нативная зависимость Next.js для next/image.
+  // Проект не использует next/image, а копирование нативного бинарника
+  // в standalone-сборку падает на Windows. Исключаем его из трейсинга.
+  outputFileTracingExcludes: {
+    "*": ["node_modules/next/node_modules/sharp/**", "node_modules/sharp/**"],
+  },
   /* config options here */
   reactStrictMode: false,
   poweredByHeader: false,
