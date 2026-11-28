@@ -221,7 +221,7 @@ export function AnalysisBoard() {
       setSelectedSquare(null);
       return;
     }
-    // Клик по другой своей фигуре — переключаем выбор, а не пытаемся «съесть» её.
+    // Клик по другой своей фигуре — переключаем выбор, а не пытаемся "съесть" её.
     const target = probe.get(square as never);
     if (target && target.color === probe.turn()) {
       setSelectedSquare(square);
