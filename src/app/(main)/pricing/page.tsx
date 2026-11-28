@@ -39,11 +39,13 @@ export default function PricingPage() {
       const data = await res.json();
       if (data.paymentUrl) {
         window.open(data.paymentUrl, '_blank');
-      } else {
-        // Mock-режим: оплата имитируется, подписка активируется
+      } else if (data.activated) {
+        // Mock-режим: оплата имитируется мгновенно, подписка активирована.
         const tariff = TARIFFS.find((t) => t.id === tariffId);
         setSuccess(`Тариф "${tariff?.name ?? tariffId}" активирован (mock-режим)`);
         router.refresh();
+      } else {
+        setError('URL оплаты не получен');
       }
     } catch {
       setError('Не удалось создать платёж');

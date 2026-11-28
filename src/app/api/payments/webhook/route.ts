@@ -2,16 +2,18 @@
 // POST /api/payments/webhook
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { getProviderFromEnv } from '@/lib/payments/providers';
+import { activateProSubscription } from '@/lib/payments/activate';
+import { getProvider } from '@/lib/payments/providers';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Вебхук-обработчик:
- * 1. Получает payload от провайдера.
+ * 1. Парсит payload в externalId + confirmStatus.
  * 2. Ищет PaymentOrder по внешнему ID.
- * 3. Подтверждает платёж у провайдера.
- * 4. Обновляет PaymentOrder и Subscription.
+ * 3. Определяет провайдера из заказа (не из env).
+ * 4. Подтверждает платёж у провайдера.
+ * 5. Обновляет PaymentOrder и Subscription.
  */
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -22,12 +24,9 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getDb();
-  const provider = getProviderFromEnv();
 
-  // ЮKassa шлёт webhook с полем "event" и данными в "object".
-  // Т-Банк шлёт с полем "invoice_id" и "status".
-  // Mock — с полем "id" и "status".
-
+  // Извлекаем внешний ID и статус из payload провайдера.
+  // Поддерживаем несколько форматов в зависимости от того, кто шлёт.
   const ykEvent = (body as Record<string, unknown>)?.event as string | undefined;
   const ykObject = (body as Record<string, unknown>)?.object as Record<string, unknown> | undefined;
   const tbStatus = (body as Record<string, unknown>)?.status as string | undefined;
@@ -38,31 +37,39 @@ export async function POST(req: NextRequest) {
   let externalId: string | undefined;
   let confirmStatus: 'confirmed' | 'cancelled';
 
-  if (provider.name === 'yookassa' && ykEvent === 'payment.succeeded') {
+  if (ykEvent === 'payment.succeeded') {
     externalId = ykObject?.id as string | undefined;
     confirmStatus = 'confirmed';
-  } else if (provider.name === 'yookassa' && ykEvent === 'payment.canceled') {
+  } else if (ykEvent === 'payment.canceled') {
     externalId = ykObject?.id as string | undefined;
     confirmStatus = 'cancelled';
-  } else if (provider.name === 'tbank' && tbInvoiceId) {
+  } else if (tbInvoiceId) {
     externalId = tbInvoiceId;
     confirmStatus = tbStatus === 'paid' ? 'confirmed' : 'cancelled';
-  } else if (provider.name === 'mock' && mockId) {
+  } else if (mockId) {
     externalId = mockId;
     confirmStatus = mockStatus === 'confirmed' ? 'confirmed' : 'cancelled';
   } else {
     return NextResponse.json({ error: 'Неизвестный webhook' }, { status: 400 });
   }
 
-  // Находим платёжное поручение по внешнему ID.
-  const order = await db.paymentOrder.findFirst({
-    where: { externalId: externalId ?? '' },
-    include: { user: true },
-  });
+  if (!externalId) {
+    return NextResponse.json({ error: 'Не указан внешний ID платежа' }, { status: 400 });
+  }
 
+  // Находим платёжное поручение по внешнему ID.
+  const order = await db.paymentOrder.findFirst({ where: { externalId } });
   if (!order) {
     return NextResponse.json({ error: 'Платёжное поручение не найдено' }, { status: 404 });
   }
+
+  // Идемпотентность: если уже оплачен — сразу OK.
+  if (order.status === 'succeeded') {
+    return NextResponse.json({ ok: true });
+  }
+
+  // Получаем провайдера из заказа (а не из env), чтобы корректно подтвердить.
+  const provider = getProvider(order.provider as 'yookassa' | 'tbank' | 'sbp' | 'ozonpay' | 'mock');
 
   // Подтверждаем у провайдера.
   const result = await provider.confirm({
@@ -91,33 +98,9 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Если платёж успешен — обновляем подписку.
+  // Если платёж успешен — активируем подписку.
   if (confirmStatus === 'confirmed') {
-    const sub = await db.subscription.findUnique({ where: { userId: order.userId } });
-    // Если уже pro — продлеваем. Если free — создаём pro.
-    if (sub) {
-      const base = sub.expiresAt ?? new Date();
-      const extended = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
-      if (extended > base) {
-        await db.subscription.update({
-          where: { id: sub.id },
-          data: {
-            plan: 'pro',
-            status: 'active',
-            expiresAt: extended,
-          },
-        });
-      }
-    } else {
-      await db.subscription.create({
-        data: {
-          userId: order.userId,
-          plan: 'pro',
-          status: 'active',
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        },
-      });
-    }
+    await activateProSubscription(db, order.userId, order.tariffId ?? null);
   }
 
   return NextResponse.json({ ok: true });

@@ -33,16 +33,3 @@ export function getProvider(name: PaymentProvider['name'] = 'mock'): PaymentProv
       return new MockProvider();
   }
 }
-
-/** Получить провайдер по env-переменной PAYMENT_PROVIDER. */
-export function getProviderFromEnv(): PaymentProvider {
-  const env = process.env.PAYMENT_PROVIDER;
-  if (!env) {
-    // В dev — mock, в production — требуем явно.
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('PAYMENT_PROVIDER не задана');
-    }
-    return new MockProvider();
-  }
-  return getProvider(env as PaymentProvider['name']);
-}

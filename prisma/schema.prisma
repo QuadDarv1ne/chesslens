@@ -54,6 +54,7 @@ model PaymentOrder {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider        String // yookassa | tbank | sbp
   plan            String // pro
+  tariffId        String? // идентификатор тарифа (pro_monthly, pro_quarterly, pro_annual)
   amount          Int // в копейках (RUB * 100)
   currency        String   @default("RUB")
   status          String   @default("pending") // pending | succeeded | canceled | failed | refunded

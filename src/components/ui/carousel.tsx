@@ -97,7 +97,6 @@ function Carousel({
     if (!api) return
     // Синхронизируем состояние с внешним API карусели (подписка на события).
     // Начальная синхронизация неизбежна: api появляется только после mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     onSelect(api)
     api.on("reInit", onSelect)
     api.on("select", onSelect)

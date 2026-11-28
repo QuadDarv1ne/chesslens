@@ -49,19 +49,17 @@ export function MoveList() {
     }
   }, [currentPly]);
 
-  // Сторона первого полухода и стартовый номер хода берутся из FEN,
-  // чтобы корректно отображать задачи/фрагменты, начинающиеся с хода чёрных.
-  const startTurn: 'w' | 'b' = fens[0]?.split(' ')[1] === 'b' ? 'b' : 'w';
-  const startMoveNo = (() => {
-    const n = parseInt(fens[0]?.split(' ')[5] ?? '1', 10);
-    return Number.isFinite(n) && n > 0 ? n : 1;
-  })();
-  const isWhitePly = (p: number) => (startTurn === 'w' ? p % 2 === 1 : p % 2 === 0);
-  const moveNo = (p: number) =>
-    startMoveNo + (startTurn === 'w' ? Math.floor((p - 1) / 2) : Math.floor(p / 2));
-
   // Группируем полуходы в строки по номеру хода — пересчитываем только при изменении партии.
+  // startTurn/startMoveNo вычисляются внутри, чтобы зависимости useMemo (sans, fens)
+  // совпадали с фактическими.
   const rows = useMemo(() => {
+    const startTurn: 'w' | 'b' = fens[0]?.split(' ')[1] === 'b' ? 'b' : 'w';
+    const parsedNo = parseInt(fens[0]?.split(' ')[5] ?? '1', 10);
+    const startMoveNo = Number.isFinite(parsedNo) && parsedNo > 0 ? parsedNo : 1;
+    const isWhitePly = (p: number) => (startTurn === 'w' ? p % 2 === 1 : p % 2 === 0);
+    const moveNo = (p: number) =>
+      startMoveNo + (startTurn === 'w' ? Math.floor((p - 1) / 2) : Math.floor(p / 2));
+
     const rowMap = new Map<number, { no: number; whitePly?: number; blackPly?: number }>();
     for (let p = 1; p <= sans.length; p++) {
       const no = moveNo(p);

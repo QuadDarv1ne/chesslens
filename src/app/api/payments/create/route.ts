@@ -5,7 +5,8 @@ import { z } from 'zod';
 import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth/session';
 import { findTariff, DEFAULT_TARIFF_ID } from '@/lib/payments/tariffs';
-import { getProviderFromEnv } from '@/lib/payments/providers';
+import { getProvider } from '@/lib/payments/providers';
+import { activateProSubscription } from '@/lib/payments/activate';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,14 +33,14 @@ export async function POST(req: NextRequest) {
 
   const db = getDb();
   const tariffId = parsed.data.tariffId ?? DEFAULT_TARIFF_ID;
-  const providerName = parsed.data.provider ?? 'mock';
+  const providerName = (parsed.data.provider ?? 'mock') as 'yookassa' | 'tbank' | 'sbp' | 'ozonpay' | 'mock';
 
   const tariff = findTariff(tariffId);
   if (!tariff) {
     return NextResponse.json({ error: `Тариф "${tariffId}" не найден` }, { status: 404 });
   }
 
-  const provider = getProviderFromEnv();
+  const provider = getProvider(providerName);
 
   try {
     const intent = await provider.createIntent(tariff, `ChessLens Pro · ${tariff.name}`, {
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         provider: provider.name,
         plan: 'pro',
+        tariffId: tariffId,
         amount: tariff.priceKopecks,
         currency: 'RUB',
         status: 'pending',
@@ -60,11 +62,28 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Mock-режим: оплата имитируется мгновенно.
+    if (providerName === 'mock') {
+      await db.paymentOrder.update({
+        where: { id: order.id },
+        data: { status: 'succeeded', paidAt: new Date() },
+      });
+      await activateProSubscription(db, user.id, tariffId);
+      return NextResponse.json({
+        orderId: order.id,
+        intentId: intent.id,
+        paymentUrl: null,
+        status: 'succeeded',
+        activated: true,
+      });
+    }
+
     return NextResponse.json({
       orderId: order.id,
       intentId: intent.id,
       paymentUrl: intent.paymentUrl ?? intent.confirmationUrl,
       status: intent.status,
+      activated: false,
     });
   } catch (err) {
     console.error('Ошибка создания платежа:', err);
